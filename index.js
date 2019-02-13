@@ -52,6 +52,8 @@ const TransactionType = {
 
 const SmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d7";
 const FaucetSmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d3";
+const ZRC20SmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d5";
+const InterestPoolSmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d9";
 
 
 module.exports = {
@@ -159,6 +161,14 @@ module.exports = {
         return createWallet(mnemonic);
     },
 
+    restoreFaucetWallet: (mnemonic) => {
+        return createFaucetWallet(mnemonic);
+    },
+
+    restoreOwnerWallet: (mnemonic) => {
+        return createOwenerWallet(mnemonic);
+    },
+
     restoreWallet: (mnemonic) => {
         return createWallet(mnemonic);
     },
@@ -243,6 +253,22 @@ module.exports = {
         return this.executeSmartContract(ae, FaucetSmartContractAddress, JSON.stringify(payload), transactionValue);
     },
 
+    executeZRC20SmartContract : function(ae,methodName, input, transactionValue) {
+        const payload = {
+            name: methodName,
+            input: input
+        }
+        return this.executeSmartContract(ae, ZRC20SmartContractAddress, JSON.stringify(payload), transactionValue);
+    },
+
+    executeInterestPoolSmartContract : function(ae,methodName, input, transactionValue) {
+        const payload = {
+            name: methodName,
+            input: input
+        }
+        return this.executeSmartContract(ae, InterestPoolSmartContractAddress, JSON.stringify(payload), transactionValue);
+    },
+
     Wallet: models.Wallet,
     ChainStats: models.ChainStats,
     BlockSummary: models.BlockSummary,
@@ -296,6 +322,54 @@ function createWallet(mnemonic) {
     const key = utils.byteToHexString(keys.publicKey);
     const id = sha3.sha3_256(keys.publicKey);
     const sKey = utils.byteToHexString(keys.secretKey);
+
+    var data = {};
+    data.public_key = key;
+    data.id = id;
+
+    return new Promise(function (resolve, reject) {
+        utils.doParallelPostReqToAllMiners(miners, Endpoints.REGISTER_CLIENT, data)
+            .then((response) => {
+                const myaccount = response;
+                myaccount.entity.secretKey = sKey;
+                myaccount.entity.mnemonic = mnemonic;
+                var ae = new models.Wallet(myaccount.entity);
+                resolve(ae);
+            })
+            .catch((error) => {
+                reject(error);
+            })
+    });
+}
+
+function createOwenerWallet(mnemonic) {
+    const key = "565deb8790ae8228e2bb0adb36ce4c4351b8958da2004902b3ea153b7df506c8"
+    const id = sha3.sha3_256(utils.hexStringToByte(key));
+    const sKey = "ee50741c692709d3706750cb90e3896c9c503d95df01df3d27a814529f5f54bf565deb8790ae8228e2bb0adb36ce4c4351b8958da2004902b3ea153b7df506c8"
+
+    var data = {};
+    data.public_key = key;
+    data.id = id;
+
+    return new Promise(function (resolve, reject) {
+        utils.doParallelPostReqToAllMiners(miners, Endpoints.REGISTER_CLIENT, data)
+            .then((response) => {
+                const myaccount = response;
+                myaccount.entity.secretKey = sKey;
+                myaccount.entity.mnemonic = mnemonic;
+                var ae = new models.Wallet(myaccount.entity);
+                resolve(ae);
+            })
+            .catch((error) => {
+                reject(error);
+            })
+    });
+}
+
+function createFaucetWallet(mnemonic) {
+    const key = "6574dd0a322ed806a4a6393675c3b58c4a0220131f53cc127b5986bb9c258e2b"
+    const id = "c8a5e74c2f4fae2c1bed79fb2b78d3b88f844bbb6bf1db5fc43240711f23321f"
+    const sKey = "7d4139e44daeea66431243ecd15263b83cb1a1152be9423514d1efe352f7457f6574dd0a322ed806a4a6393675c3b58c4a0220131f53cc127b5986bb9c258e2b"
 
     var data = {};
     data.public_key = key;
