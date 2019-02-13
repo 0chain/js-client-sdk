@@ -1,0 +1,53 @@
+@startuml
+
+actor User
+control OrginatingDevice
+control OtherDevice
+
+note over OrginatingDevice: Assumption devices are already Paired
+
+group  OrginatingDevice has Pin
+    User  -> OrginatingDevice : Enter the Tx info
+    OrginatingDevice -> User : ask Pin?
+    User --> OrginatingDevice : Enter the Pin
+    OrginatingDevice ->  OrginatingDevice : Validate the Pin
+    alt Pin SuccessFul
+        OrginatingDevice ->  OrginatingDevice: Pick the timestamp
+        OrginatingDevice -> OtherDevice : Send payload
+        OtherDevice -> OtherDevice : Partial Sign the payload  
+        OtherDevice --> OrginatingDevice:  Send Partial signature 
+        OrginatingDevice -> OrginatingDevice: Check the timestamp for Validity
+        alt timestamp not expired
+            OrginatingDevice -> OrginatingDevice : compute the aggregate signature
+            OrginatingDevice -> Blockchain : submit the Transaction
+            OrginatingDevice -> OtherDevice: Send Tx Hash [For keep tracking tx status]
+        else timestamp expired
+            note over OrginatingDevice: Retry logic 
+        end
+    end 
+end
+
+group  OrginatingDevice doesn't have the Pin
+    User  -> OrginatingDevice : Enter the Tx info
+    OrginatingDevice -> OtherDevice : Send payload
+    OtherDevice -> OtherDevice: Present the Tx payload
+    OtherDevice -> User : ask Pin?
+    User --> OtherDevice : Enter the Pin
+    OtherDevice -> OtherDevice: Validate the Pin
+
+    alt Pin SuccessFul
+        OtherDevice -> OtherDevice : Pick the timestamp
+        OtherDevice -> OtherDevice : Partial Sign 
+        OtherDevice -> OrginatingDevice: Send Partial signature along with timestamp
+        alt timestamp not expired
+            OrginatingDevice -> OrginatingDevice : compute the aggregate signature
+            OrginatingDevice -> Blockchain : submit the Transaction
+            OrginatingDevice -> OtherDevice: Send Tx Hash [For keep tracking tx status]
+        else
+            note over OrginatingDevice: Retry logic 
+        end
+    end
+
+end
+
+@enduml

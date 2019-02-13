@@ -1,0 +1,16 @@
+@startuml
+
+actor User
+control Device1
+control Device2
+
+User - Device1 -> Create Wallet
+Device1 - User -> Split the key
+User - Device1 -> Yes / No
+alt Yes Split the key
+
+else Normal key
+    
+end  
+
+@enduml

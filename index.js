@@ -35,7 +35,9 @@ const Endpoints = {
     GET_CHAIN_STATS: "v1/chain/get/stats",
     GET_BLOCK_INFO: "v1/block/get",
     CHECK_TRANSACTION_STATUS: "v1/transaction/get/confirmation",
-    GET_BALANCE: "v1/client/get/balance=",
+    GET_BALANCE: "v1/client/get/balance",
+
+    GET_SCSTATE: "v1/scstate/get",
 
     //BLOBBER
     ALLOCATION_FILE_LIST: "/v1/file/list/",
@@ -50,7 +52,7 @@ const TransactionType = {
     SMART_CONTRACT: 1000 // A smart contract transaction type
 }
 
-const SmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d7";
+const StorageSmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d7";
 const FaucetSmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d3";
 const ZRC20SmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d5";
 const InterestPoolSmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d9";
@@ -184,8 +186,12 @@ module.exports = {
 
     //Smart contract address need to pass in toClientId
     executeSmartContract: (ae, to_client_id, payload, transactionValue = 0) => {
-        const toClientId = typeof to_client_id === "undefined" ? SmartContractAddress : to_client_id;
+        const toClientId = typeof to_client_id === "undefined" ? StorageSmartContractAddress : to_client_id;
         return submitTransaction(ae, toClientId, transactionValue, payload, TransactionType.SMART_CONTRACT);
+    },
+
+    getStorageSmartContractStateForKey: (keyName, keyvalue) => {
+        return getInformationFromRandomSharder(Endpoints.GET_SCSTATE, { key: keyName+":"+keyvalue, sc_address: StorageSmartContractAddress  });
     },
 
     allocateStorage: function allocateStorage(ae, num_writes, data_shards, parity_shards, type, size, expiration_date) {

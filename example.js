@@ -36,9 +36,9 @@ var config = {
     clusterName: "Test"
 }
 
-sdk.init(config);  // init with custom server configuration
+//sdk.init(config);  // init with custom server configuration
 
-//sdk.init(); // to use default local host servers
+sdk.init(); // to use default local host servers
 //console.log(sdk.TransactionType);
 
 
@@ -79,6 +79,15 @@ sdk.registerClient()
     })
     .then((txDetail) => {
         console.log("Allocation transaction detail ", txDetail);
+        return JSON.parse(txDetail.transaction.transaction_output)
+    })
+    .then(async (allocationInfo) => {
+        console.log("Allocation", allocationInfo);
+        await utils.sleep(1000);    
+        return sdk.getStorageSmartContractStateForKey("allocation",allocationInfo.id);
+    })
+    .then((scstate) => {
+        console.log("SCSTATE", scstate);
     })
     .catch((error) => {
         console.log("My Error", error)
