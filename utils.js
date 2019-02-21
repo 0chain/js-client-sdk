@@ -17,6 +17,11 @@
 
 "use strict";
 
+var sha3 = require('js-sha3');
+var JSONbig = require('json-bigint');
+const axios = require('axios');
+const PromiseAll = require('promises-all');
+
 module.exports = {
     byteToHexString: function byteToHexString(uint8arr) {
         if (!uint8arr) {
@@ -69,6 +74,18 @@ module.exports = {
         return new Promise(resolve => setTimeout(resolve, ms));
     },
 
+    toHex: (str) => {
+        var result = '';
+        for (var i = 0; i < str.length; i++) {
+            result += str.charCodeAt(i).toString(16);
+        }
+        return result;
+    },
+
+    computeStoragePartDataId: function (allocationId, path, fileName, partNum) {
+        return sha3.sha3_256(allocationId + ":" + path + ":" + fileName + ":" + partNum);
+    },
+
 
     /*
        A utility function to make a post request.
@@ -76,56 +93,58 @@ module.exports = {
        jsonPostString: A stringfy of JSON object the payload for the request
        Return: Returns a Promise.  
    */
-    postReq: function postReq(url, jsonPostString) {
-        return new Promise(function (resolve, reject) {
-            var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-            const xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function (e) {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        resolve(xhr.responseText);
-                    } else {
-                        //console.log("Utils Here in error: " + xhr.responseText + " status = " + xhr.status)
-                        //TODO: Send ErrorObject
-                        reject(xhr.status + "--" + xhr.responseText);
-                    }
-                } else if (xhr.status != 200) {
-                    // console.log("Interium states = " + xhr.readyState + " status = " + xhr.status )
-                } else {
-                    // console.log("Interium states = " + xhr.readyState + " status = " + xhr.status )
-                }
+    postReq: function postReq(url, data) {
+        const self = this;
+        return axios({
+            method: 'post',
+            url: url,
+            data: data,
+            transformResponse: function (responseData) {
+                return self.parseJson(responseData)
             }
-            xhr.ontimeout = function () {
-                reject('timeout');
-            }
-            xhr.open("POST", url, true);
-            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-            xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-            xhr.timeout = 3000;
-            xhr.send(jsonPostString);
         });
     },
 
-    getReq: function getReq(url) {
-
-        return new Promise(function (resolve, reject) {
-            var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-            const xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function (e) {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        resolve(xhr.responseText)
-                    } else {
-                        //console.log("Utils Here in error: " + xhr.responseText + " status = " + xhr.status)
-                        //TODO: Send ErrorObject
-                        reject(xhr.status + "--" + xhr.responseText)
-                    }
-                }
+    getReq: function getReq(url, params) {
+        const self = this;
+        return axios.get(url, {
+            params: params,
+            transformResponse: function (data, headers) {
+                return self.parseJson(data)
             }
+        });
+    },
 
-            xhr.open('get', url, true)
-            xhr.send();
-        })
+    parseJson: function (jsonString) {
+        return JSONbig.parse(jsonString)
+    },
+
+    doParallelPostReqToAllMiners: function (miners, url, postData) {
+        const self = this;
+        return new Promise(function (resolve, reject) {
+            const urls = miners.map(miner => miner + url);
+            const promises = urls.map(url => self.postReq(url, postData));
+            PromiseAll.all(promises).then(function (result) {
+                console.log("result", result.resolve.length);
+                console.log("Error", result.reject.length);
+                // This is needed otherwise error will print big trace from axios
+                const errors = result.reject.map(e => e.message);
+                if (result.resolve.length === 0) {
+                    // return error here
+                    reject({ error: errors });
+                }
+                else {
+                    //console.log("Response", result.resolve[0].data);
+                    //resolve({ data: result.resolve[0].data, error: errors })
+                    resolve(result.resolve[0].data);
+                }
+            }, function (error) {
+                console.error("This should never happen", error);
+                reject({ error: error });
+            });
+
+
+        });
     }
 
 

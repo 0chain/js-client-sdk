@@ -1,6 +1,6 @@
 {
   "name": "js-client",
-  "version": "0.8.0",
+  "version": "1.0.0",
   "description": "js client library to interact with 0chain Blockchain",
   "main": "index.js",
   "scripts": {
@@ -10,9 +10,11 @@
   "author": "0chain",
   "license": "GPL",
   "dependencies": {
+    "axios": "^0.18.0",
+    "bip39": "^2.5.0",
     "js-sha3": "^0.8.0",
     "json-bigint": "^0.3.0",
-    "tweetnacl": "^1.0.0",
-    "xmlhttprequest": "^1.8.0"
+    "promises-all": "^1.0.0",
+    "tweetnacl": "^1.0.0"
   }
 }

@@ -96,6 +96,7 @@ module.exports = {
         this.creation_date = data.creation_date;
         this.public_key = data.public_key;
         this.secretKey = data.secretKey;
+        this.mnemonic = data.mnemonic;
     },
 
     Transaction: function Transaction(data) {
@@ -109,6 +110,7 @@ module.exports = {
         this.signature = data.signature;
         this.creation_date = data.creation_date;
         this.transaction_type = data.transaction_type;
+        this.transaction_output = data.transaction_output;
         this.txn_output_hash = (typeof data.txn_output_hash != 'undefined') ? data.txn_output_hash : null;
     },
 
@@ -138,5 +140,4 @@ module.exports = {
         this.verifier_id = data.verifier_id;
         this.signature = data.signature;
     }
-
 }
