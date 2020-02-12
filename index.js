@@ -19,6 +19,7 @@ const nacl = require('tweetnacl');
 const sha3 = require('js-sha3');
 const bip39 = require('bip39');
 var BlueBirdPromise = require("bluebird");
+const bls = require('bls-wasm');
 
 //local import 
 const utils = require('./utils');
@@ -399,6 +400,15 @@ function createWallet(mnemonic) {
 }
 
 function submitTransaction(ae, toClientId, val, note, transaction_type) {
+
+    bls.init(bls.BN254).then((response)=> {
+        console.log('BLS INITIALIZED SUCCESSFULLY', response)
+        resolve(response)
+    })
+    .catch((err)=> {
+        console.log("COULDN'T INITIALIZE BLS", err)
+        reject(err)
+    })
 
     const hashPayload = sha3.sha3_256(note);
     const ts = Math.floor(new Date().getTime() / 1000);
