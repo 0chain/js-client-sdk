@@ -318,6 +318,16 @@ module.exports = {
         return this.executeSmartContract(ae, InterestPoolSmartContractAddress, JSON.stringify(payload), val)
     },
 
+    unlockTokens: async function(ae, poolId){ 
+        const payload = {
+            name: "unlock",
+            input: {
+                poolId: poolId
+            }
+        }
+        return this.executeSmartContract(ae, InterestPoolSmartContractAddress, JSON.stringify(payload))
+    },
+    
     getAllBlobbers: function getAllBlobbers() {
         return utils.getConsensusedInformationFromSharders(sharders,Endpoints.SC_BLOBBER_STATS ,{});
     },
