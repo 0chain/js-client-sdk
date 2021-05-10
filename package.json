@@ -15,6 +15,7 @@
     "bls-wasm": "^0.3.0",
     "js-sha3": "^0.8.0",
     "json-bigint": "^1.0.0",
+    "lodash": "4.17.21",
     "moment": "^2.24.0",
     "promises-all": "^1.0.0",
     "request": "^2.88.2",
