@@ -22,6 +22,16 @@
         //   file /*e.g. contents of test.txt*/,
         //   encrypt /*"T" or "F"*/,
         //   fileAttrs)
+        let resUploadFile= await Upload(
+          "POST", 
+          "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
+          `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
+          "/",
+          "demo.txt",
+          "./demo.txt",
+          "F",
+          ""
+        )
 
         // Download(
         //   allocation,
@@ -34,6 +44,16 @@
         //   lookuphash,
         // )
 
+        // let resDownloadFile= await Download(
+        //   "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
+        //   `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
+        //   "/",
+        //   "",
+        //   "",
+        //   "",
+        //   "demo.txt",
+        //   ""
+        // )
         // Share(
         //   allocation,
         //   clientJSON,
