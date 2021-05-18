@@ -1,96 +1,233 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/BrowserFS/2.0.0/browserfs.js"></script>
     <script src="wasm_exec.js"></script>
-    <script>
-      async function init() {
-        const go = new Go();
-        // let result = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), go.importObject)
-        // let result = await WebAssembly.instantiateStreaming(fetch("sdkver.wasm"), go.importObject)
-        let result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
-        go.run(result.instance);
-        console.log(initializeConfig(
-          "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
-          "bls0chain", 31082 /*port*/, "https://six.devnet-0chain.net/dns",
-          10 /*cleanup worker minutes*/));
-        let res = await GetClientEncryptedPublicKey(`{"client_id":"55e80af154d837700db5ffa024b10229d51a8aa04ba230d21e77243e3a24e0dd","client_key":"04134141913d0a667ce584298a3504393ae8e26c5c93d9838c89c2c9d81eda26a7117106cd71b561a6d5401e5146d988bb352b7914c816618c9093a40c7cce27b30943b4a28df637fff476d7ce47be8e654fda9ae7a98ab8a90110b79f82de9357089ea861b875e2b262d757cbba73ad09a0acb378c4a2b5015adacd137cbf8434","keys":[{"public_key":"04134141913d0a667ce584298a3504393ae8e26c5c93d9838c89c2c9d81eda26a7117106cd71b561a6d5401e5146d988bb352b7914c816618c9093a40c7cce27b30943b4a28df637fff476d7ce47be8e654fda9ae7a98ab8a90110b79f82de9357089ea861b875e2b262d757cbba73ad09a0acb378c4a2b5015adacd137cbf8434","private_key":"1b1b2d76eff56cc2ad2440e3c0973ad59548b9756d56f8c3801761315a08c70f"}],"mnemonics":"shadow zoo timber van test flat slight delay interest true betray village position cushion bless tool budget walnut top upgrade column assist runway virtual","version":"1.0","date_created":"2021-05-01 23:47:17.314769 -0500 CDT m=+0.676196168"}`)
-        console.log(await res.text());
 
-        // Input parameters are all strings.
+<!--
+  This section largely taken from, in order to get Golang's filesystem working in browser. 
+  You can probably ignore this.
 
-        // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
-        //   file /*e.g. contents of test.txt*/,
-        //   encrypt /*"T" or "F"*/,
-        //   fileAttrs)
-        let resUploadFile= await Upload(
-          "POST", 
-          "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
-          `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
-          "/",
-          "demo.txt",
-          "./demo.txt",
-          "F",
-          ""
-        )
+  https://dev.to/wcchoi/browser-side-pdf-processing-with-go-and-webassembly-13hn
+-->
+<script>
+  // Taken from this excellent article:
+  //
+  // Configures BrowserFS to use the InMemory file system.
+  BrowserFS.configure({ fs: "InMemory" }, function(e) {
+    if (e) {
+      // An error happened!
+      throw e;
+    }
+    // Otherwise, BrowserFS is ready-to-use!
+    var fs = BrowserFS.BFSRequire('fs');
+    window.fs = fs;
+    // var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
 
-        // Download(
-        //   allocation,
-        //   clientJSON,
-        //   remotePath,
-        //   authTicket,
-        //   numBlocks,
-        //   rx_pay,
-        //   file_name,
-        //   lookuphash,
-        // )
+    window.fs.constants = {
+      O_RDONLY: 0,
+      O_WRONLY: 1,
+      O_RDWR: 2,
+      O_CREAT: 64,
+      O_EXCL: 128,
+      O_NOCTTY: 256,
+      O_TRUNC: 512,
+      O_APPEND: 1024,
+      O_DIRECTORY: 65536,
+      O_NOATIME: 262144,
+      O_NOFOLLOW: 131072,
+      O_SYNC: 1052672,
+      O_DIRECT: 16384,
+      O_NONBLOCK: 2048,
+    };
 
-        // let resDownloadFile= await Download(
-        //   "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
-        //   `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
-        //   "/",
-        //   "",
-        //   "",
-        //   "",
-        //   "demo.txt",
-        //   ""
-        // )
-        // Share(
-        //   allocation,
-        //   clientJSON,
-        //   remotePath,
-        //   refereeClientID,
-        //   encryptionpublickey
-        // )
+    let outputBuf = "";
 
-        // Rename(
-        //   allocation,
-        //   clientJSON,
-        //   remotePath,
-        //   newName,
-        // )
+    // Taken from
+    // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L186
+    const encoder = new TextEncoder("utf-8");
+    const decoder = new TextDecoder("utf-8");
 
-        // Copy(
-        //   allocation,
-        //   clientJSON,
-        //   remotePath,
-        //   destPath,
-        // )
-
-        // Delete(
-        //   allocation,
-        //   clientJSON,
-        //   remotePath,
-        // )
-
-        // Move(
-        //   allocation,
-        //   clientJSON,
-        //   remotePath,
-        //   destPath,
-        // )
+    // Largely taken from
+    // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L62
+    window.fs.writeSyncOriginal = window.fs.writeSync
+    window.fs.writeSync = function(fd, buf) {
+      if (fd === 1 || fd === 2) {
+        outputBuf += decoder.decode(buf);
+        const nl = outputBuf.lastIndexOf("\n");
+        if (nl != -1) {
+          console.log(outputBuf.substr(0, nl));
+          outputBuf = outputBuf.substr(nl + 1);
+        }
+        return buf.length;
+      } else {
+        return window.fs.writeSyncOriginal(...arguments);
       }
-      init();
-    </script>
+    };
+
+    window.fs.writeOriginal = window.fs.write
+    window.fs.write = function(fd, buf, offset, length, position, callback) {
+      if (fd === 1 || fd === 2) {
+        if (offset !== 0 || length !== buf.length || position !== null) {
+          throw new Error("not implemented");
+        }
+        const n = this.writeSync(fd, buf);
+        callback(null, n, buf);
+      } else {
+        // buf:
+        arguments[1] = window.Buffer.from(arguments[1]);
+        return window.fs.writeOriginal(...arguments);
+      }
+    };
+
+    window.fs.openOriginal = window.fs.open
+    window.fs.open = function(path, flags, mode, callback) {
+      var myflags = 'r';
+      var O = window.fs.constants;
+
+      // Convert numeric flags to string flags
+      // FIXME: maybe wrong...
+      if (flags & O.O_WRONLY) { // 'w'
+        myflags = 'w';
+        if (flags & O.O_EXCL) {
+          myflags = 'wx';
+        }
+      } else if (flags & O.O_RDWR) { // 'r+' or 'w+'
+        if (flags & O.O_CREAT && flags & O.O_TRUNC) { // w+
+          if (flags & O.O_EXCL) {
+            myflags = 'wx+';
+          } else {
+            myflags = 'w+';
+          }
+        } else { // r+
+          myflags = 'r+';
+        }
+      } else if (flags & O.O_APPEND) { // 'a'
+        throw new Error("Not implmented");
+      }
+      // TODO: handle other cases
+
+      return window.fs.openOriginal(path, myflags, mode, callback);
+    };
+
+    window.fs.fstatOriginal = window.fs.fstat;
+    window.fs.fstat = function(fd, callback) {
+      return window.fs.fstatOriginal(fd, function() {
+        var retStat = arguments[1];
+        delete retStat['fileData'];
+        retStat.atimeMs = retStat.atime.getTime();
+        retStat.mtimeMs = retStat.mtime.getTime();
+        retStat.ctimeMs = retStat.ctime.getTime();
+        retStat.birthtimeMs = retStat.birthtime.getTime();
+        return callback(arguments[0], retStat);
+
+      });
+    };
+
+    window.fs.closeOriginal = window.fs.close;
+    window.fs.close = function(fd, callback) {
+      return window.fs.closeOriginal(fd, function() {
+        if(typeof arguments[0] === 'undefined') arguments[0] = null;
+        return callback(...arguments);
+      });
+    }
+
+    init();
+  });
+</script>
+
+<!--
+  @Hau this is the test harness you should tinker with. Ignore above <script>
+-->
+<script>
+async function init() {
+  const go = new Go();
+  // let result = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), go.importObject)
+  // let result = await WebAssembly.instantiateStreaming(fetch("sdkver.wasm"), go.importObject)
+  let result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
+  go.run(result.instance);
+  console.log(initializeConfig(
+    "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
+    "bls0chain", 31082 /*port*/, "https://six.devnet-0chain.net/dns",
+    10 /*cleanup worker minutes*/));
+  let res = await GetClientEncryptedPublicKey(`{"client_id":"55e80af154d837700db5ffa024b10229d51a8aa04ba230d21e77243e3a24e0dd","client_key":"04134141913d0a667ce584298a3504393ae8e26c5c93d9838c89c2c9d81eda26a7117106cd71b561a6d5401e5146d988bb352b7914c816618c9093a40c7cce27b30943b4a28df637fff476d7ce47be8e654fda9ae7a98ab8a90110b79f82de9357089ea861b875e2b262d757cbba73ad09a0acb378c4a2b5015adacd137cbf8434","keys":[{"public_key":"04134141913d0a667ce584298a3504393ae8e26c5c93d9838c89c2c9d81eda26a7117106cd71b561a6d5401e5146d988bb352b7914c816618c9093a40c7cce27b30943b4a28df637fff476d7ce47be8e654fda9ae7a98ab8a90110b79f82de9357089ea861b875e2b262d757cbba73ad09a0acb378c4a2b5015adacd137cbf8434","private_key":"1b1b2d76eff56cc2ad2440e3c0973ad59548b9756d56f8c3801761315a08c70f"}],"mnemonics":"shadow zoo timber van test flat slight delay interest true betray village position cushion bless tool budget walnut top upgrade column assist runway virtual","version":"1.0","date_created":"2021-05-01 23:47:17.314769 -0500 CDT m=+0.676196168"}`)
+  console.log(await res.text());
+
+  // Input parameters are all strings.
+
+  // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
+  //   file /*e.g. contents of test.txt*/,
+  //   encrypt /*"T" or "F"*/,
+  //   fileAttrs)
+  let resUploadFile= await Upload(
+    "POST", 
+    "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
+    `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
+    "/",
+    "demo.txt",
+    "./demo.txt",
+    "F",
+    ""
+  )
+
+  // Download(
+  //   allocation,
+  //   clientJSON,
+  //   remotePath,
+  //   authTicket,
+  //   numBlocks,
+  //   rx_pay,
+  //   file_name,
+  //   lookuphash,
+  // )
+
+  // let resDownloadFile= await Download(
+  //   "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
+  //   `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
+  //   "/",
+  //   "",
+  //   "",
+  //   "",
+  //   "demo.txt",
+  //   ""
+  // )
+  // Share(
+  //   allocation,
+  //   clientJSON,
+  //   remotePath,
+  //   refereeClientID,
+  //   encryptionpublickey
+  // )
+
+  // Rename(
+  //   allocation,
+  //   clientJSON,
+  //   remotePath,
+  //   newName,
+  // )
+
+  // Copy(
+  //   allocation,
+  //   clientJSON,
+  //   remotePath,
+  //   destPath,
+  // )
+
+  // Delete(
+  //   allocation,
+  //   clientJSON,
+  //   remotePath,
+  // )
+
+  // Move(
+  //   allocation,
+  //   clientJSON,
+  //   remotePath,
+  //   destPath,
+  // )
+}
+</script>
+
   </head>
   <body></body>
 </html>
