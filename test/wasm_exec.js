@@ -35,7 +35,8 @@
 	}
 
 	const enosys = () => {
-		const err = new Error("not implemented");
+    // console.trace();
+		const err = new Error("not implemented (thrown from wasm_exec.js)");
 		err.code = "ENOSYS";
 		return err;
 	};
@@ -97,7 +98,8 @@
 			pid: -1,
 			ppid: -1,
 			umask() { throw enosys(); },
-			cwd() { throw enosys(); },
+			// cwd() { throw enosys(); },
+			cwd() { return "/"; }, // TODO: cannot hardcode this.
 			chdir() { throw enosys(); },
 		}
 	}
