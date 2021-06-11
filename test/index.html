@@ -183,15 +183,16 @@ async function init() {
   go.run(result.instance);
   console.log(initializeConfig(
     "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
-    "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
+    "bls0chain", 31082 /*port*/, "http://nine.devnet-0chain.net/dns",
+    // "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "https://seven.devnet-0chain.net/dns",
     10 /*cleanup worker minutes*/));
 
-  const wallet = {"client_id":"c711822861edaa8478edb1250c567e34566636db5daf02b18bd3398327341315","client_key":"040e1a453f468ac67eade1a99abb9e90b1eec0077dd95d0b53777631e366ec9dd70e10d7438380b26e85f2420e39554bd719f28e4226b04d6eaddd6204d4fb3eae0100e45bf79cc5210da9f4d42570243f6b9ea9faf754e232b02357b6aaebada8117530108eb1dfccde02f0b02f2869d01c350f133f015c3e1b2101f1a95e88fb","keys":[{"public_key":"040e1a453f468ac67eade1a99abb9e90b1eec0077dd95d0b53777631e366ec9dd70e10d7438380b26e85f2420e39554bd719f28e4226b04d6eaddd6204d4fb3eae0100e45bf79cc5210da9f4d42570243f6b9ea9faf754e232b02357b6aaebada8117530108eb1dfccde02f0b02f2869d01c350f133f015c3e1b2101f1a95e88fb","private_key":"119d67265b83aa90a6e070dc47dba82654a7a41ad7b41b77f60a8e44243708df"}],"mnemonics":"belt that host runway notable design crystal drive learn story cloth gate album better weasel switch case tube amateur absorb evoke pottery online orchard","version":"1.0","date_created":"2021-06-09 10:59:31.237362 -0500 CDT m=+0.635785293"};
+  const wallet = {"client_id":"315f086bbfd16036323ff580a347583a7f028b6800e72973974b02d339acdcfd","client_key":"041942fcff2a5c2f326aa6e60d1c7bf6ee6575077eeb6ff42503098f810e5bdd91061317c241d6c1f42b44f3608e6073b4d55bc4176adf322fa93066dd3300958b0e349b342dc3d5be818419d81b02174a56c53aa883048f08bb564a940aca0ad6117ed1caaf4eb8a4121ff8d8712dc1094a9c9e447dde77225f8f8fedf91d581e","keys":[{"public_key":"041942fcff2a5c2f326aa6e60d1c7bf6ee6575077eeb6ff42503098f810e5bdd91061317c241d6c1f42b44f3608e6073b4d55bc4176adf322fa93066dd3300958b0e349b342dc3d5be818419d81b02174a56c53aa883048f08bb564a940aca0ad6117ed1caaf4eb8a4121ff8d8712dc1094a9c9e447dde77225f8f8fedf91d581e","private_key":"232dd37c45ef952c8ddaa7d722039b3b16ab981dd6b63a880829106e69d44584"}],"mnemonics":"shine salon physical paddle clock pulp boost elite fine diet intact video awake lesson movie drift reject license spoil sample proof canal harvest grab","version":"1.0","date_created":"2021-06-11 07:31:57.099459 -0500 CDT m=+0.609355876"};
 
   const s_wallet = JSON.stringify(wallet);
 
-  const alloc = "db3db6e82c51411389ebe00e97dccf58b420a6ca348b0eea357cf80d9c3ccbe6";
+  const alloc = "476e1f55c03fa66a115be2433438aca541fabc4a016e124357e35f34ce745219";
 
   let res = await GetClientEncryptedPublicKey(s_wallet);
   console.log(await res.text());
@@ -201,32 +202,34 @@ async function init() {
 
   // Input parameters are all strings.
 
-  // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
-  //   file /*e.g. contents of test.txt*/,
-  //   encrypt /*"T" or "F"*/,
-  //   fileAttrs)
-  console.log('running test')
-  let resUploadFile= await Upload(
-    "POST", 
-    alloc,
-    s_wallet,
-    "/",
-    "demo.txt",
-    "./demo.txt",
-    "F",
-    ""
-  )
-  console.log('running test, DONE')
+  // // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
+  // //   file /*e.g. contents of test.txt*/,
+  // //   encrypt /*"T" or "F"*/,
+  // //   fileAttrs)
+  // console.log('running test')
+  // let resUploadFile= await Upload(
+  //   "POST",  // method
+  //   alloc, // allocation
+  //   s_wallet, // clientJSON
+  //   "/", // remotePath
+  //   "demo2.txt", // Filename
+  //   "./demo.txt", // file contents
+  //   "T", // encrypt
+  //   "" // fileAttrs
+  // )
+  // console.log('running test, DONE')
 
+  // // Download(allocation, clientJSON, remotePath, authTicket, numBlocks,
+  // // rx_pay, file_name, lookuphash)
   // Download(
-  //   allocation,
-  //   clientJSON,
-  //   remotePath,
-  //   authTicket,
-  //   numBlocks,
-  //   rx_pay,
-  //   file_name,
-  //   lookuphash,
+  //   alloc, // allocation
+  //   s_wallet, // clientJSON
+  //   "/", // remotePath
+  //   "", // authTicket
+  //   "0", // numBlocks
+  //   "", // rx_pay
+  //   "demo.txt", // file_name
+  //   "" // lookuphash
   // )
 
   // let resDownloadFile= await Download(
@@ -247,32 +250,37 @@ async function init() {
   //   encryptionpublickey
   // )
 
-  // Rename(
-  //   allocation,
-  //   clientJSON,
-  //   remotePath,
-  //   newName,
+  // // Tested!
+  // await Rename(
+  //   alloc,
+  //   s_wallet, // clientJSON
+  //   "/a.txt", // remotePath
+  //   "b.txt" // newName
   // )
 
-  // Copy(
-  //   allocation,
-  //   clientJSON,
-  //   remotePath,
-  //   destPath,
+  // // Tested!
+  // await Copy(
+  //   alloc, // allocation
+  //   s_wallet, // clientJSON
+  //   "/dir1/demo2.txt", // remotePath
+  //   "/" // destPath
   // )
 
-  // Delete(
-  //   allocation,
-  //   clientJSON,
-  //   remotePath,
+  // // Tested!
+  // await Delete(
+  //   alloc,
+  //   s_wallet, // clientJSON
+  //   "/demo2.txt" // remotePath
   // )
 
-  // Move(
-  //   allocation,
-  //   clientJSON,
-  //   remotePath,
-  //   destPath,
+  // // Tested!
+  // await Move(
+  //   alloc,
+  //   s_wallet, // clientJSON
+  //   "/dir1/demo2.txt", // remotePath
+  //   "/" // destPath
   // )
+
 }
 </script>
 
