@@ -11,8 +11,6 @@
   https://dev.to/wcchoi/browser-side-pdf-processing-with-go-and-webassembly-13hn
 -->
 <script>
-  // Taken from this excellent article:
-  //
   // Configures BrowserFS to use the InMemory file system.
   BrowserFS.configure({ fs: "InMemory" }, function(e) {
     if (e) {
@@ -146,6 +144,8 @@
       // callback();
       path = "/asdf"; // TODO: gotta unhardcode this.
       return window.fs.statOriginal(path, function() {
+        console.log('stat debug', arguments);
+
         var retStat = arguments[1];
 
         // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
@@ -157,12 +157,74 @@
           retStat.ctimeMs = retStat.ctime.getTime();
           retStat.birthtimeMs = retStat.birthtime.getTime();
         }
-        console.log('d4', retStat);
 
         return callback(arguments[0], retStat);
         // return callback(...arguments);
       });
       // stat(path, callback) { callback(enosys()); },
+    }
+
+    window.fs.unlinkOriginal = window.fs.unlink;
+    window.fs.unlink = function(path, callback) {
+      // callback();
+      path = "/asdf"; // TODO: gotta unhardcode this.
+      return window.fs.unlinkOriginal(path, function() {
+        // var retStat = arguments[1];
+
+        console.log('unlink debug', arguments);
+
+        // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+        // // console.log('d4', arguments[1]);
+        // if (retStat) {
+        //   if (retStat.fileData) { delete retStat['fileData']; }
+        //   retStat.atimeMs = retStat.atime.getTime();
+        //   retStat.mtimeMs = retStat.mtime.getTime();
+        //   retStat.ctimeMs = retStat.ctime.getTime();
+        //   retStat.birthtimeMs = retStat.birthtime.getTime();
+        // }
+        // console.log('d4', retStat);
+
+        arguments[0].code = "";
+        arguments[0].errno = 0;
+
+        return callback(null, arguments[1]);
+        // return callback(arguments[0], arguments[1]);
+        // return callback(arguments[0], retStat);
+        // return callback(...arguments);
+      });
+    }
+
+    window.fs.mkdirOriginal = window.fs.mkdir;
+    window.fs.mkdir = function(path, callback) {
+      // callback();
+      path = "/asdf"; // TODO: gotta unhardcode this.
+      return window.fs.mkdirOriginal(path, function() {
+        // var retStat = arguments[1];
+
+        console.log('mkdir debug', arguments);
+
+        // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+        // // console.log('d4', arguments[1]);
+        // if (retStat) {
+        //   if (retStat.fileData) { delete retStat['fileData']; }
+        //   retStat.atimeMs = retStat.atime.getTime();
+        //   retStat.mtimeMs = retStat.mtime.getTime();
+        //   retStat.ctimeMs = retStat.ctime.getTime();
+        //   retStat.birthtimeMs = retStat.birthtime.getTime();
+        // }
+        // console.log('d4', retStat);
+
+        // arguments[0].code = "";
+        // arguments[0].errno = 0;
+
+        if (callback) {
+          return callback(...arguments);
+        }
+        // return callback(null, arguments[1]);
+        // return callback(arguments[0], arguments[1]);
+        // return callback(arguments[0], retStat);
+        // return callback(...arguments);
+      });
     }
 
     // // TODO: to really make it work.
@@ -219,36 +281,64 @@ async function init() {
   // )
   // console.log('running test, DONE')
 
+  // // Tested!
+  // // This is download using remotepath.
   // // Download(allocation, clientJSON, remotePath, authTicket, numBlocks,
   // // rx_pay, file_name, lookuphash)
-  // Download(
+  // await Download(
   //   alloc, // allocation
   //   s_wallet, // clientJSON
-  //   "/", // remotePath
-  //   "", // authTicket
-  //   "0", // numBlocks
-  //   "", // rx_pay
-  //   "demo.txt", // file_name
-  //   "" // lookuphash
-  // )
+  //   "/b.txt", // remotePath
+  //   "", // authTicket (not needed)
+  //   "0", // numBlocks (not needed)
+  //   "", // rx_pay (not needed)
+  //   "", // file_name (not needed)
+  //   "" // lookuphash (not needed)
+  // );
+  // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
 
-  // let resDownloadFile= await Download(
-  //   "4e863327cf888dfd6ae87ebc7dbd6771741a4d7a0288527f213dd9a243dffad4",
-  //   `{"client_id":"1e843936880ed171a9855ef5c108fa3b8ac6bf 055ef9fc155065fd5538e31698","client_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","keys":[{"public_key":"09345640f6ebe04af038f5e0643ed55c812fce4f6b90144cd9ebc4b55b46b120dba3b7d3910031481007de5e7804bbf0e707dc972d1a44730309d7dafac7f394","private_key":"31e77908dc0e301b058adc974e2ba7d06c0d2b5f1f3597224b5e6821bbe7871a"}],"mnemonics":"sponsor review enrich surround point file wrestle soup jungle gallery holiday employ sleep raw helmet length flame rail burst emerge comfort rookie agree insect","version":"1.0","date_created":"53344-06-08 09:13:51"}`,
-  //   "/",
-  //   "",
-  //   "",
-  //   "",
-  //   "demo.txt",
-  //   ""
-  // )
-  // Share(
-  //   allocation,
-  //   clientJSON,
-  //   remotePath,
-  //   refereeClientID,
-  //   encryptionpublickey
-  // )
+  // // Download(allocation, clientJSON, remotePath, authTicket, numBlocks,
+  // // rx_pay, file_name, lookuphash)
+  // await Download(
+  //   alloc, // allocation
+  //   s_wallet, // clientJSON
+  //   "/b.txt", // remotePath
+  //   "", // authTicket (not needed)
+  //   "0", // numBlocks (not needed)
+  //   "", // rx_pay (not needed)
+  //   "", // file_name (not needed)
+  //   "" // lookuphash (not needed)
+  // );
+  // // This is how you read the file. Please note that "/asdf" is very important.
+  // // It cannot be another file name. It's hardcoded (for now).
+  // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+  // // Tested!
+  // // This is download using authTicket
+  // r = await Share(
+  //   alloc,
+  //   s_wallet, // clientJSON
+  //   "/demo2.txt", // remotePath
+  //   "", // refereeClientID
+  //   "" // encryptionpublicke
+  // );
+  // let auth = await r.text()
+  // console.log('Share done, auth ticket', auth);
+  // await Download(
+  //   alloc, // allocation (not needed)
+  //   s_wallet, // clientJSON
+  //   "", // remotePath (not needed)
+  //   auth, // authTicket
+  //   "0", // numBlocks (not needed)
+  //   "", // rx_pay (not needed)
+  //   "", // file_name (not needed)
+  //   "" // lookuphash (not needed)
+  // );
+  // // This is how you read the file. Please note that "/asdf" is very important.
+  // // It cannot be another file name. It's hardcoded (for now).
+  // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+  // This is download using remotepath.
 
   // // Tested!
   // await Rename(
