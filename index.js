@@ -16,14 +16,14 @@
  */
 
 // const nacl = require('tweetnacl');
-const sha3 = require("js-sha3");
-const bip39 = require("bip39");
-var BlueBirdPromise = require("bluebird");
+const sha3 = require('js-sha3');
+const bip39 = require('bip39');
+var BlueBirdPromise = require('bluebird');
 
 //local import
-const utils = require("./utils");
-var models = require("./models");
-("use strict");
+const utils = require('./utils');
+var models = require('./models');
+('use strict');
 
 var miners, proxyServerUrl, zeroBoxUrl, sharders, clusterName, version;
 var preferredBlobbers, tokenLock;
@@ -36,88 +36,88 @@ let bls;
 // const MinerSmartContractAddress = "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d1";
 
 const MultiSigSmartContractAddress =
-  "27b5ef7120252b79f9dd9c05505dd28f328c80f6863ee446daede08a84d651a7";
+  '27b5ef7120252b79f9dd9c05505dd28f328c80f6863ee446daede08a84d651a7';
 const VestingSmartContractAddress =
-  "2bba5b05949ea59c80aed3ac3474d7379d3be737e8eb5a968c52295e48333ead";
+  '2bba5b05949ea59c80aed3ac3474d7379d3be737e8eb5a968c52295e48333ead';
 const FaucetSmartContractAddress =
-  "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d3";
+  '6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d3';
 const ZRC20SmartContractAddress =
-  "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d5";
+  '6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d5';
 const StorageSmartContractAddress =
-  "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d7";
+  '6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d7';
 const MinerSmartContractAddress =
-  "6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d9";
+  '6dba10422e368813802877a85039d3985d96760ed844092319743fb3a76712d9';
 const InterestPoolSmartContractAddress =
-  "cf8d0df9bd8cc637a4ff4e792ffe3686da6220c45f0e1103baa609f3f1751ef4";
+  'cf8d0df9bd8cc637a4ff4e792ffe3686da6220c45f0e1103baa609f3f1751ef4';
 
 const Endpoints = {
-  REGISTER_CLIENT: "v1/client/put",
-  PUT_TRANSACTION: "v1/transaction/put",
+  REGISTER_CLIENT: 'v1/client/put',
+  PUT_TRANSACTION: 'v1/transaction/put',
 
-  GET_RECENT_FINALIZED: "v1/block/get/recent_finalized",
-  GET_LATEST_FINALIZED: "v1/block/get/latest_finalized",
-  GET_CHAIN_STATS: "v1/chain/get/stats",
-  GET_BLOCK_INFO: "v1/block/get",
-  CHECK_TRANSACTION_STATUS: "v1/transaction/get/confirmation",
-  GET_BALANCE: "v1/client/get/balance",
-  GET_SCSTATE: "v1/scstate/get",
+  GET_RECENT_FINALIZED: 'v1/block/get/recent_finalized',
+  GET_LATEST_FINALIZED: 'v1/block/get/latest_finalized',
+  GET_CHAIN_STATS: 'v1/chain/get/stats',
+  GET_BLOCK_INFO: 'v1/block/get',
+  CHECK_TRANSACTION_STATUS: 'v1/transaction/get/confirmation',
+  GET_BALANCE: 'v1/client/get/balance',
+  GET_SCSTATE: 'v1/scstate/get',
 
   // SC REST
-  SC_REST: "v1/screst/",
+  SC_REST: 'v1/screst/',
   SC_REST_ALLOCATION:
-    "v1/screst/" + StorageSmartContractAddress + "/allocation",
+    'v1/screst/' + StorageSmartContractAddress + '/allocation',
   SC_REST_ALLOCATIONS:
-    "v1/screst/" + StorageSmartContractAddress + "/allocations",
+    'v1/screst/' + StorageSmartContractAddress + '/allocations',
   SC_REST_READPOOL_STATS:
-    "v1/screst/" + StorageSmartContractAddress + "/getReadPoolStat",
+    'v1/screst/' + StorageSmartContractAddress + '/getReadPoolStat',
   SC_REST_WRITEPOOL_STATS:
-    "v1/screst/" + StorageSmartContractAddress + "/getWritePoolStat",
-  SC_BLOBBER_STATS: "v1/screst/" + StorageSmartContractAddress + "/getblobbers",
-  SC_SHARDER_LIST: "v1/screst/" + MinerSmartContractAddress + "/getSharderList",
-  SC_MINERS_STATS: "v1/screst/" + MinerSmartContractAddress + "/getMinerList",
+    'v1/screst/' + StorageSmartContractAddress + '/getWritePoolStat',
+  SC_BLOBBER_STATS: 'v1/screst/' + StorageSmartContractAddress + '/getblobbers',
+  SC_SHARDER_LIST: 'v1/screst/' + MinerSmartContractAddress + '/getSharderList',
+  SC_MINERS_STATS: 'v1/screst/' + MinerSmartContractAddress + '/getMinerList',
   SC_REST_ALLOCATION_MIN_LOCK:
-    "v1/screst/" + StorageSmartContractAddress + "/allocation_min_lock",
+    'v1/screst/' + StorageSmartContractAddress + '/allocation_min_lock',
 
   GET_LOCKED_TOKENS:
-    "v1/screst/" + InterestPoolSmartContractAddress + "/getPoolsStats",
-  GET_USER_POOLS: "v1/screst/" + MinerSmartContractAddress + "/getUserPools",
+    'v1/screst/' + InterestPoolSmartContractAddress + '/getPoolsStats',
+  GET_USER_POOLS: 'v1/screst/' + MinerSmartContractAddress + '/getUserPools',
 
   //STAKING
   GET_STORAGESC_POOL_STATS:
-    "v1/screst/" + StorageSmartContractAddress + "/getUserStakePoolStat",
+    'v1/screst/' + StorageSmartContractAddress + '/getUserStakePoolStat',
   GET_MINERSC_POOL_STATS:
-    "v1/screst/" + MinerSmartContractAddress + "/getUserPools",
+    'v1/screst/' + MinerSmartContractAddress + '/getUserPools',
 
   //BLOBBER
-  ALLOCATION_FILE_LIST: "/v1/file/list/",
-  FILE_STATS_ENDPOINT: "/v1/file/stats/",
-  OBJECT_TREE_ENDPOINT: "/v1/file/objecttree/",
-  FILE_META_ENDPOINT: "/v1/file/meta/",
-  RENAME_ENDPOINT: "/v1/file/rename/",
-  COPY_ENDPOINT: "/v1/file/copy/",
-  UPLOAD_ENDPOINT: "/v1/file/upload/",
-  COMMIT_ENDPOINT: "/v1/connection/commit/",
-  COPY_ENDPOINT: "/v1/file/copy/",
-  OBJECT_TREE_ENDPOINT: "/v1/file/objecttree/",
-  COMMIT_META_TXN_ENDPOINT: "/v1/file/commitmetatxn/",
+  ALLOCATION_FILE_LIST: '/v1/file/list/',
+  FILE_STATS_ENDPOINT: '/v1/file/stats/',
+  OBJECT_TREE_ENDPOINT: '/v1/file/objecttree/',
+  FILE_META_ENDPOINT: '/v1/file/meta/',
+  RENAME_ENDPOINT: '/v1/file/rename/',
+  COPY_ENDPOINT: '/v1/file/copy/',
+  UPLOAD_ENDPOINT: '/v1/file/upload/',
+  COMMIT_ENDPOINT: '/v1/connection/commit/',
+  COPY_ENDPOINT: '/v1/file/copy/',
+  OBJECT_TREE_ENDPOINT: '/v1/file/objecttree/',
+  COMMIT_META_TXN_ENDPOINT: '/v1/file/commitmetatxn/',
 
-  PROXY_SERVER_UPLOAD_ENDPOINT: "/upload",
-  PROXY_SERVER_DOWNLOAD_ENDPOINT: "/download",
-  PROXY_SERVER_SHARE_ENDPOINT: "/share",
-  PROXY_SERVER_RENAME_ENDPOINT: "/rename",
-  PROXY_SERVER_COPY_ENDPOINT: "/copy",
-  PROXY_SERVER_DELETE_ENDPOINT: "/delete",
-  PROXY_SERVER_MOVE_ENDPOINT: "/move",
-  PROXY_SERVER_ENCRYPT_PUBLIC_KEY_ENDPOINT: "/publicEncryptionKey",
+  PROXY_SERVER_UPLOAD_ENDPOINT: '/upload',
+  PROXY_SERVER_DOWNLOAD_ENDPOINT: '/download',
+  PROXY_SERVER_SHARE_ENDPOINT: '/share',
+  PROXY_SERVER_RENAME_ENDPOINT: '/rename',
+  PROXY_SERVER_COPY_ENDPOINT: '/copy',
+  PROXY_SERVER_DELETE_ENDPOINT: '/delete',
+  PROXY_SERVER_MOVE_ENDPOINT: '/move',
+  PROXY_SERVER_ENCRYPT_PUBLIC_KEY_ENDPOINT: '/publicEncryptionKey',
 
   // ZEROBOX URLs
-  ZEROBOX_SERVER_GET_MNEMONIC_ENDPOINT: "/getmnemonic",
-  ZEROBOX_SERVER_SHARE_INFO_ENDPOINT: "/shareinfo",
-  ZEROBOX_SERVER_SAVE_MNEMONIC_ENDPOINT: "/savemnemonic",
-  ZEROBOX_SERVER_DELETE_MNEMONIC_ENDPOINT: "/shareinfo",
-  ZEROBOX_SERVER_REFERRALS_INFO_ENDPOINT: "/getreferrals",
-  ZEROBOX_SERVER_FREE_ALLOCATION: "/v2/createallocation",
-  ZEROBOX_SERVER_DELETE_EXIST_ALLOCATION: "/v2/deleteallocation",
+  ZEROBOX_SERVER_GET_MNEMONIC_ENDPOINT: '/getmnemonic',
+  ZEROBOX_SERVER_SHARE_INFO_ENDPOINT: '/shareinfo',
+  ZEROBOX_SERVER_SAVE_MNEMONIC_ENDPOINT: '/savemnemonic',
+  ZEROBOX_SERVER_DELETE_MNEMONIC_ENDPOINT: '/shareinfo',
+  ZEROBOX_SERVER_REFERRALS_INFO_ENDPOINT: '/getreferrals',
+  ZEROBOX_SERVER_FREE_ALLOCATION: '/v2/createallocation',
+  ZEROBOX_SERVER_DELETE_EXIST_ALLOCATION: '/v2/deleteallocation',
 };
 
 const TransactionType = {
@@ -130,40 +130,40 @@ const TransactionType = {
 
 module.exports = {
   BlockInfoOptions: {
-    HEADER: "header",
-    FULL: "full",
+    HEADER: 'header',
+    FULL: 'full',
   },
 
   AllocationTypes: {
-    FREE: "Free",
-    PREMIUM: "Premium",
-    MONETIZE: "Monetize",
+    FREE: 'Free',
+    PREMIUM: 'Premium',
+    MONETIZE: 'Monetize',
   },
 
   /////////////SDK Stuff below //////////////
   init: function init(configObject, bls_wasm) {
     var config;
     if (
-      typeof configObject != "undefined" &&
-      configObject.hasOwnProperty("miners") &&
-      configObject.hasOwnProperty("sharders") &&
-      configObject.hasOwnProperty("clusterName") &&
-      configObject.hasOwnProperty("proxyServerUrl")
+      typeof configObject != 'undefined' &&
+      configObject.hasOwnProperty('miners') &&
+      configObject.hasOwnProperty('sharders') &&
+      configObject.hasOwnProperty('clusterName') &&
+      configObject.hasOwnProperty('proxyServerUrl')
     ) {
       config = configObject;
     } else {
       const jsonContent = {
         miners: [
-          "http://localhost:7071/",
-          "http://localhost:7072/",
-          "http://localhost:7073/",
+          'http://localhost:7071/',
+          'http://localhost:7072/',
+          'http://localhost:7073/',
         ],
-        sharders: ["http://localhost:7171/"],
+        sharders: ['http://localhost:7171/'],
         preferredBlobbers: [
-          "http://localhost:7051/",
-          "http://localhost:7052/",
-          "http://localhost:7053/",
-          "http://localhost:7054/",
+          'http://localhost:7051/',
+          'http://localhost:7052/',
+          'http://localhost:7053/',
+          'http://localhost:7054/',
         ],
         readPrice: {
           min: 0,
@@ -174,10 +174,10 @@ module.exports = {
           max: 0,
         },
         tokenLock: 0,
-        proxyServerUrl: "http://localhost:9082",
-        zeroBoxUrl: "http://one.0box.io:9081",
+        proxyServerUrl: 'http://localhost:9082',
+        zeroBoxUrl: 'http://one.0box.io:9081',
         transaction_timeout: 15,
-        clusterName: "local",
+        clusterName: 'local',
       };
       config = jsonContent;
     }
@@ -199,11 +199,11 @@ module.exports = {
     maxChallengeCompletionTime = parseInt(
       config.maxChallengeCompletionTime * 1000000000
     );
-    version = "0.8.0";
+    version = '0.8.0';
   },
 
   getSdkMetadata: () => {
-    return "version: " + version + " cluster: " + clusterName;
+    return 'version: ' + version + ' cluster: ' + clusterName;
   },
 
   createWalletAndDesiredAllocation: async function () {
@@ -213,7 +213,7 @@ module.exports = {
         responseObj = { activeWallet: activeWallet };
         return this.executeFaucetSmartContract(
           activeWallet,
-          "pour",
+          'pour',
           {},
           10 ** 10
         );
@@ -325,7 +325,7 @@ module.exports = {
           resolve(res);
         })
         .catch((error) => {
-          if (error.error === "value not present") {
+          if (error.error === 'value not present') {
             resolve({
               balance: 0,
             });
@@ -414,7 +414,7 @@ module.exports = {
 
   createReadPool: async function createReadPool(ae) {
     const payload = {
-      name: "new_read_pool",
+      name: 'new_read_pool',
       input: null,
     };
     return this.executeSmartContract(ae, undefined, JSON.stringify(payload));
@@ -429,7 +429,7 @@ module.exports = {
   },
 
   storeData: (ae, payload) => {
-    const toClientId = "";
+    const toClientId = '';
     return submitTransaction(ae, toClientId, 0, payload, TransactionType.DATA);
   },
 
@@ -440,7 +440,7 @@ module.exports = {
   //Smart contract address need to pass in toClientId
   executeSmartContract: (ae, to_client_id, payload, transactionValue = 0) => {
     const toClientId =
-      typeof to_client_id === "undefined"
+      typeof to_client_id === 'undefined'
         ? StorageSmartContractAddress
         : to_client_id;
     return submitTransaction(
@@ -456,7 +456,7 @@ module.exports = {
     return utils.getConsensusedInformationFromSharders(
       sharders,
       Endpoints.GET_SCSTATE,
-      { key: keyName + ":" + keyvalue, sc_address: StorageSmartContractAddress }
+      { key: keyName + ':' + keyvalue, sc_address: StorageSmartContractAddress }
     );
     // return getInformationFromRandomSharder(Endpoints.GET_SCSTATE, { key: keyName+":"+keyvalue, sc_address: StorageSmartContractAddress  });
   },
@@ -482,7 +482,7 @@ module.exports = {
     expiration_date = Math.floor(expiration_date.addDays(30).getTime() / 1000);
 
     const payload = {
-      name: "new_allocation_request",
+      name: 'new_allocation_request',
       input: {
         data_shards,
         parity_shards,
@@ -513,7 +513,7 @@ module.exports = {
     tokens
   ) {
     const payload = {
-      name: "update_allocation_request",
+      name: 'update_allocation_request',
       input: {
         owner_id: ae.id,
         id: allocation_id,
@@ -606,7 +606,7 @@ module.exports = {
 
   storagescLockToken: async function (ae, val, id) {
     const payload = {
-      name: "stake_pool_lock",
+      name: 'stake_pool_lock',
       input: { blobber_id: id },
     };
     return this.executeSmartContract(
@@ -619,7 +619,7 @@ module.exports = {
 
   minerscAndSharderscLockToken: async function (ae, val, id, type) {
     const payload = {
-      name: "addToDelegatePool",
+      name: 'addToDelegatePool',
       input: { id, type },
     };
     return this.executeSmartContract(
@@ -632,7 +632,7 @@ module.exports = {
 
   requstUnstakeMinerSharderToken: async function (ae, pool_id, id, type) {
     const payload = {
-      name: "deleteFromDelegatePool",
+      name: 'deleteFromDelegatePool',
       input: { pool_id, id, type },
     };
     return this.executeSmartContract(
@@ -644,7 +644,7 @@ module.exports = {
 
   requstUnstakeBlobberToken: async function (ae, pool_id, id) {
     const payload = {
-      name: "stake_pool_unlock",
+      name: 'stake_pool_unlock',
       input: { pool_id, blobber_id: id },
     };
     return this.executeSmartContract(
@@ -673,14 +673,14 @@ module.exports = {
           .getReq(miners[index] + urls[url], {})
           .then((res) => {
             let activeUrls;
-            if (url != "blobbersList") {
+            if (url != 'blobbersList') {
               let active = activeList[url];
               activeUrls =
                 res.data &&
                 res.data.Nodes &&
                 res.data.Nodes.filter((value) => {
                   const url =
-                    value.simple_miner.host + ":" + value.simple_miner.port;
+                    value.simple_miner.host + ':' + value.simple_miner.port;
                   let check = false;
                   for (let val of active) {
                     if (val.indexOf(url.slice(0, -6)) !== -1) {
@@ -758,7 +758,7 @@ module.exports = {
 
   createLockTokens: async function (ae, val, durationHr, durationMin) {
     const payload = {
-      name: "lock",
+      name: 'lock',
       input: {
         duration: `${durationHr}h${durationMin}m`,
       },
@@ -776,7 +776,7 @@ module.exports = {
 
   lockTokensInReadPool: async function (ae, allocation, duration, tokens) {
     const payload = {
-      name: "read_pool_lock",
+      name: 'read_pool_lock',
       input: {
         duration: duration,
         allocation_id: allocation,
@@ -792,7 +792,7 @@ module.exports = {
 
   lockTokensInWritePool: async function (ae, allocation, duration, tokens) {
     const payload = {
-      name: "write_pool_lock",
+      name: 'write_pool_lock',
       input: {
         duration: duration,
         allocation_id: allocation,
@@ -808,7 +808,7 @@ module.exports = {
 
   unlockTokens: async function (ae, poolId) {
     const payload = {
-      name: "unlock",
+      name: 'unlock',
       input: {
         pool_id: poolId,
       },
@@ -822,7 +822,7 @@ module.exports = {
 
   writePoolTokenUnlock: async function (ae, poolId) {
     const payload = {
-      name: "write_pool_unlock",
+      name: 'write_pool_unlock',
       input: {
         pool_id: poolId,
       },
@@ -836,7 +836,7 @@ module.exports = {
 
   readPoolTokenUnlock: async function (ae, poolId) {
     const payload = {
-      name: "read_pool_unlock",
+      name: 'read_pool_unlock',
       input: {
         pool_id: poolId,
       },
@@ -871,31 +871,34 @@ module.exports = {
 
     const detailedBlobbers = currentBlobbers.map((blobber) => {
       const blobberUrl = new URL(blobber.url);
-      const convertedUrl =
+
+      blobber.convertedUrl =
         blobberUrl.protocol +
-        "//" +
+        '//' +
         blobberUrl.hostname +
-        "/blobber" +
+        '/blobber' +
         blobberUrl.port.slice(-2) +
-        "/_statsJSON";
-      return convertedUrl;
+        '/_statsJSON';
+
+      return blobber;
     });
 
-    const detailedBlobbers2 = await Promise.all(
-      detailedBlobbers.map(async (blobberUrl) => {
-        const blobData = await fetch(blobberUrl);
+    const detailedBlobbersCallingEachAPI = await Promise.all(
+      detailedBlobbers.map(async (dBl) => {
+        const blobData = await fetch(dBl.convertedUrl);
         const blobJson = await blobData.json();
-        return blobJson;
+        return { ...blobJson, ...dBl };
       })
     );
-    return detailedBlobbers2;
+
+    return detailedBlobbersCallingEachAPI;
   },
 
   getAllocationSharedFilesFromPath: async function (
     allocation_id,
     lookup_hash,
     client_id,
-    auth_token = ""
+    auth_token = ''
   ) {
     var blobber_url;
     const completeAllocationInfo = await this.allocationInfo(allocation_id);
@@ -964,7 +967,7 @@ module.exports = {
         };
         resolve(res);
       } else {
-        reject("Not able to fetch file details from blobbers");
+        reject('Not able to fetch file details from blobbers');
       }
     });
   },
@@ -988,7 +991,7 @@ module.exports = {
       if (allBlobbersResponse.length > 0) {
         resolve(allBlobbersResponse);
       } else {
-        reject("Not able to fetch file details from blobbers");
+        reject('Not able to fetch file details from blobbers');
       }
     });
   },
@@ -1017,7 +1020,7 @@ module.exports = {
         };
         resolve(res);
       } else {
-        reject("Not able to fetch file details from blobbers");
+        reject('Not able to fetch file details from blobbers');
       }
     });
   },
@@ -1026,10 +1029,10 @@ module.exports = {
     ae,
     crudType,
     allocation_id,
-    path = "",
-    auth_ticket = "",
-    lookuphash = "",
-    metadata = ""
+    path = '',
+    auth_ticket = '',
+    lookuphash = '',
+    metadata = ''
   ) {
     if (metadata.length === 0) {
       if (path.length > 0) {
@@ -1072,7 +1075,7 @@ module.exports = {
     };
     const submitResponse = await submitTransaction(
       ae,
-      "",
+      '',
       0,
       JSON.stringify(payload)
     );
@@ -1092,7 +1095,7 @@ module.exports = {
     allocation,
     lookup_hash,
     client_id,
-    auth_ticket = ""
+    auth_ticket = ''
   ) {
     const completeAllocationInfo = await this.allocationInfo(allocation);
     blobber_list = completeAllocationInfo.blobbers.map((blobber) => {
@@ -1105,10 +1108,10 @@ module.exports = {
           blobber_url =
             blobber + Endpoints.COMMIT_META_TXN_ENDPOINT + allocation;
           const formData = new FormData();
-          formData.append("path_hash", lookup_hash);
-          formData.append("txn_id", transaction_hash);
+          formData.append('path_hash', lookup_hash);
+          formData.append('txn_id', transaction_hash);
           if (auth_ticket) {
-            formData.append("auth_token", atob(auth_ticket));
+            formData.append('auth_token', atob(auth_ticket));
           }
           await utils.postReqToBlobber(blobber_url, formData, {}, client_id);
         } catch (error) {
@@ -1129,11 +1132,11 @@ module.exports = {
   ) {
     const url = proxyServerUrl + Endpoints.PROXY_SERVER_UPLOAD_ENDPOINT;
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("allocation", allocation_id);
-    formData.append("remote_path", path);
-    formData.append("client_json", JSON.stringify(client_json));
-    formData.append("encrypt", encrypt);
+    formData.append('file', file);
+    formData.append('allocation', allocation_id);
+    formData.append('remote_path', path);
+    formData.append('client_json', JSON.stringify(client_json));
+    formData.append('encrypt', encrypt);
     const response = await utils.postReq(url, formData, option);
     return response;
   },
@@ -1172,10 +1175,10 @@ module.exports = {
   renameObject: async function (allocation_id, path, new_name, client_json) {
     const url = proxyServerUrl + Endpoints.PROXY_SERVER_RENAME_ENDPOINT;
     const formData = new FormData();
-    formData.append("allocation", allocation_id);
-    formData.append("remote_path", path);
-    formData.append("new_name", new_name);
-    formData.append("client_json", JSON.stringify(client_json));
+    formData.append('allocation', allocation_id);
+    formData.append('remote_path', path);
+    formData.append('new_name', new_name);
+    formData.append('client_json', JSON.stringify(client_json));
     const response = await utils.putReq(url, formData);
     return response;
   },
@@ -1183,9 +1186,9 @@ module.exports = {
   deleteObject: async function (allocation_id, path, client_json) {
     const url = proxyServerUrl + Endpoints.PROXY_SERVER_DELETE_ENDPOINT;
     const formData = new FormData();
-    formData.append("allocation", allocation_id);
-    formData.append("remote_path", path);
-    formData.append("client_json", JSON.stringify(client_json));
+    formData.append('allocation', allocation_id);
+    formData.append('remote_path', path);
+    formData.append('client_json', JSON.stringify(client_json));
     const response = await utils.delReq(url, formData);
     return response;
   },
@@ -1193,10 +1196,10 @@ module.exports = {
   copyObject: async function (allocation_id, path, dest, client_json) {
     const url = proxyServerUrl + Endpoints.PROXY_SERVER_COPY_ENDPOINT;
     const formData = new FormData();
-    formData.append("allocation", allocation_id);
-    formData.append("remote_path", path);
-    formData.append("dest_path", dest);
-    formData.append("client_json", JSON.stringify(client_json));
+    formData.append('allocation', allocation_id);
+    formData.append('remote_path', path);
+    formData.append('dest_path', dest);
+    formData.append('client_json', JSON.stringify(client_json));
     const response = await utils.putReq(url, formData);
     return response;
   },
@@ -1233,10 +1236,10 @@ module.exports = {
   moveObject: async function (allocation_id, path, dest, client_json) {
     const url = proxyServerUrl + Endpoints.PROXY_SERVER_MOVE_ENDPOINT;
     const formData = new FormData();
-    formData.append("allocation", allocation_id);
-    formData.append("remote_path", path);
-    formData.append("dest_path", dest);
-    formData.append("client_json", JSON.stringify(client_json));
+    formData.append('allocation', allocation_id);
+    formData.append('remote_path', path);
+    formData.append('dest_path', dest);
+    formData.append('client_json', JSON.stringify(client_json));
     const response = await utils.putReq(url, formData);
     return response;
   },
@@ -1259,10 +1262,10 @@ module.exports = {
   ) {
     const url = zeroBoxUrl + Endpoints.ZEROBOX_SERVER_SAVE_MNEMONIC_ENDPOINT;
     const data = new FormData();
-    data.append("mnemonic", encryptMnemonicUsingPasscode);
-    data.append("id_token", tokenId);
-    data.append("phone_num", phone);
-    data.append("app_id", "0x00");
+    data.append('mnemonic', encryptMnemonicUsingPasscode);
+    data.append('id_token', tokenId);
+    data.append('phone_num', phone);
+    data.append('app_id', '0x00');
     const response = await utils.postMethodTo0box(
       url,
       data,
@@ -1282,10 +1285,10 @@ module.exports = {
   ) {
     const url = zeroBoxUrl + Endpoints.ZEROBOX_SERVER_FREE_ALLOCATION;
     const data = new FormData();
-    data.append("id_token", id_token);
-    data.append("phone_num", phone_num);
-    data.append("encryption_key", encryption_key);
-    data.append("username", username);
+    data.append('id_token', id_token);
+    data.append('phone_num', phone_num);
+    data.append('encryption_key', encryption_key);
+    data.append('username', username);
     const response = await utils.postMethodTo0box(
       url,
       data,
@@ -1303,8 +1306,8 @@ module.exports = {
   ) {
     const url = zeroBoxUrl + Endpoints.ZEROBOX_SERVER_DELETE_EXIST_ALLOCATION;
     const data = new FormData();
-    data.append("id_token", id_token);
-    data.append("phone_num", phone_num);
+    data.append('id_token', id_token);
+    data.append('phone_num', phone_num);
     const reponse = await utils.deleteMethodTo0box(
       url,
       data,
@@ -1325,11 +1328,11 @@ module.exports = {
     const url = zeroBoxUrl + Endpoints.ZEROBOX_SERVER_SHARE_INFO_ENDPOINT;
     const client_signature = this.getSign(ae.id, ae.secretKey);
     const data = new FormData();
-    data.append("auth_tickets", JSON.stringify(authTicket));
-    data.append("message", message);
-    data.append("from_info", fromInfo);
-    data.append("reciever_client_id", receiver_id);
-    data.append("client_signature", client_signature);
+    data.append('auth_tickets', JSON.stringify(authTicket));
+    data.append('message', message);
+    data.append('from_info', fromInfo);
+    data.append('reciever_client_id', receiver_id);
+    data.append('client_signature', client_signature);
     const response = await utils.postMethodTo0box(
       url,
       data,
@@ -1343,8 +1346,8 @@ module.exports = {
     const url = zeroBoxUrl + Endpoints.ZEROBOX_SERVER_SHARE_INFO_ENDPOINT;
     const sig = this.getSign(activeWallet.id, activeWallet.secretKey);
     const data = new FormData();
-    data.append("client_signature", sig);
-    data.append("auth_ticket", authTicket);
+    data.append('client_signature', sig);
+    data.append('auth_ticket', authTicket);
     const response = await utils.deleteMethodTo0box(
       url,
       data,
@@ -1430,7 +1433,7 @@ async function getInformationFromRandomSharder(url, params, parser) {
       .then(function (result) {
         if (result[0].data) {
           const data =
-            typeof parser !== "undefined"
+            typeof parser !== 'undefined'
               ? parser(result[0].data)
               : result[0].data;
           resolve(data);
@@ -1496,7 +1499,7 @@ function createWallet(mnemonic) {
 }
 
 function createWalletKeys(mnemonic) {
-  const seed = bip39.mnemonicToSeed(mnemonic, "0chain-client-split-key");
+  const seed = bip39.mnemonicToSeed(mnemonic, '0chain-client-split-key');
   const buffer = new Uint8Array(seed);
   const blsSecret = new bls.SecretKey();
   bls.setRandFunc(buffer);
@@ -1517,7 +1520,7 @@ async function submitTransaction(ae, toClientId, val, note, transaction_type) {
   const ts = Math.floor(new Date().getTime() / 1000);
 
   const hashdata =
-    ts + ":" + ae.id + ":" + toClientId + ":" + val + ":" + hashPayload;
+    ts + ':' + ae.id + ':' + toClientId + ':' + val + ':' + hashPayload;
 
   const hash = sha3.sha3_256(hashdata);
   const bytehash = utils.hexStringToByte(hash);
@@ -1535,7 +1538,7 @@ async function submitTransaction(ae, toClientId, val, note, transaction_type) {
   data.hash = hash;
   data.transaction_fee = 0;
   data.signature = sig.serializeToHexStr();
-  data.version = "1.0";
+  data.version = '1.0';
   return new Promise(function (resolve, reject) {
     utils
       .doParallelPostReqToAllMiners(miners, Endpoints.PUT_TRANSACTION, data)
