@@ -681,20 +681,19 @@ module.exports = {
             });
     },
     getAllBlobbersDetails: async function getAllBlobbersDetails() {
-      const currentBlobbers = await this.getAllBlobbers();
-      const detailedBlobbers = currentBlobbers.map((blobber)=>{ 
-          const blobberUrl = new URL(blobber.url)
-          blobber.convertedUrl = blobberUrl.protocol+'//'+blobberUrl.hostname +'/blobber'+ blobberUrl.port.slice(-2)+'/_statsJSON'
-          return blobber;
-      })
-      const  detailedBlobbersCallingEachApi = await Promise.all(detailedBlobbers.map(async (dBl)=>{
-          const blobData = await fetch(dBl.convertedUrl)
-          const blobJson = await blobData.json()
-          return {...blobJson,...dBl};
-     }))  
-      return detailedBlobbersCallingEachApi ;
-    },
-    
+        const currentBlobbers = await this.getAllBlobbers();
+        const detailedBlobbers = currentBlobbers.map((blobber)=>{ 
+            const blobberUrl = new URL(blobber.url)
+            blobber.convertedUrl = blobberUrl.protocol+'//'+blobberUrl.hostname +'/blobber'+ blobberUrl.port.slice(-2)+'/_statsJSON'
+            return blobber;
+        })
+        const  detailedBlobbersCallingEachApi = await Promise.all(detailedBlobbers.map(async (dBl)=>{
+            const blobData = await fetch(dBl.convertedUrl)
+            const blobJson = await blobData.json()
+            return {...blobJson,...dBl};
+       }))  
+        return detailedBlobbersCallingEachApi ;
+      },
 
     getAllocationSharedFilesFromPath: async function (allocation_id, lookup_hash, client_id, auth_token = "") {
         var blobber_url;
