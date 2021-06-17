@@ -1,6 +1,6 @@
 {
   "name": "@zerochain/0chain",
-  "version": "1.3.55",
+  "version": "1.3.56",
   "description": "js client library to interact with 0chain Blockchain",
   "main": "index.js",
   "scripts": {
