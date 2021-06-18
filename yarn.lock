@@ -69,10 +69,10 @@ bip39@^2.5.0:
     safe-buffer "^5.0.1"
     unorm "^1.3.3"
 
-bls-wasm@^0.3.0:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/bls-wasm/-/bls-wasm-0.3.1.tgz#e9fa3cb794a32090d271cd4ebcc856011afab363"
-  integrity sha512-ne4Sgsu67ebqMa/qUfLIJzzrhx/klvkgKBG1ytWaY/cLsZHT69NVIvzEM9MCiBhjDLgF4F4n/zfHLjtyZ4GU6A==
+bls-wasm@^0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/bls-wasm/-/bls-wasm-0.4.4.tgz#8d66e2ac00627f934aae1f434686f371c3c24152"
+  integrity sha512-aWecwBe9weKwl5Bb5jj7crSHIgyjVbgUjHeudQeKbRqC3gFHZcf1jTfLTlnCFQnzg+wJklX0GJbWvpHN5voILA==
 
 bluebird@^3.4.7:
   version "3.5.3"
