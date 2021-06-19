@@ -4,259 +4,265 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/BrowserFS/2.0.0/browserfs.js"></script>
     <script src="wasm_exec.js"></script>
 
-<!--
+    <!--
   This section largely taken from, in order to get Golang's filesystem working in browser. 
   You can probably ignore this.
 
   https://dev.to/wcchoi/browser-side-pdf-processing-with-go-and-webassembly-13hn
 -->
-<script>
-  // Configures BrowserFS to use the InMemory file system.
-  BrowserFS.configure({ fs: "InMemory" }, function(e) {
-    if (e) {
-      // An error happened!
-      throw e;
-    }
-    // Otherwise, BrowserFS is ready-to-use!
-    var fs = BrowserFS.BFSRequire('fs');
-    var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
-    window.fs = fs;
-    window.Buffer = Buffer;
-
-    window.fs.constants = {
-      O_RDONLY: 0,
-      O_WRONLY: 1,
-      O_RDWR: 2,
-      O_CREAT: 64,
-      O_EXCL: 128,
-      O_NOCTTY: 256,
-      O_TRUNC: 512,
-      O_APPEND: 1024,
-      O_DIRECTORY: 65536,
-      O_NOATIME: 262144,
-      O_NOFOLLOW: 131072,
-      O_SYNC: 1052672,
-      O_DIRECT: 16384,
-      O_NONBLOCK: 2048,
-    };
-
-    let outputBuf = "";
-
-    // Taken from
-    // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L186
-    const encoder = new TextEncoder("utf-8");
-    const decoder = new TextDecoder("utf-8");
-
-    // Largely taken from
-    // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L62
-    window.fs.writeSyncOriginal = window.fs.writeSync
-    window.fs.writeSync = function(fd, buf) {
-      // console.log('d2');
-      if (fd === 1 || fd === 2) {
-        outputBuf += decoder.decode(buf);
-        const nl = outputBuf.lastIndexOf("\n");
-        if (nl != -1) {
-          console.log(outputBuf.substr(0, nl));
-          outputBuf = outputBuf.substr(nl + 1);
+    <script>
+// Configures BrowserFS to use the InMemory file system.
+    BrowserFS.configure({ fs: "InMemory" }, function(e) {
+        if (e) {
+          // An error happened!
+          throw e;
         }
-        return buf.length;
-      } else {
-        return window.fs.writeSyncOriginal(...arguments);
-      }
-    };
-
-    window.fs.writeOriginal = window.fs.write
-    window.fs.write = function(fd, buf, offset, length, position, callback) {
-      console.log('d1');
-      if (fd === 1 || fd === 2) {
-        if (offset !== 0 || length !== buf.length || position !== null) {
-          throw new Error("not implemented");
-        }
-        const n = this.writeSync(fd, buf);
-        callback(null, n, buf);
-      } else {
-        // buf:
-        arguments[1] = window.Buffer.from(arguments[1]);
-        return window.fs.writeOriginal(...arguments);
-      }
-    };
-
-    window.fs.openOriginal = window.fs.open
-    window.fs.open = function(path, flags, mode, callback) {
-      var myflags = 'r';
-      var O = window.fs.constants;
-
-      // Convert numeric flags to string flags
-      // FIXME: maybe wrong...
-      if (flags & O.O_WRONLY) { // 'w'
-        myflags = 'w';
-        if (flags & O.O_EXCL) {
-          myflags = 'wx';
-        }
-      } else if (flags & O.O_RDWR) { // 'r+' or 'w+'
-        if (flags & O.O_CREAT && flags & O.O_TRUNC) { // w+
-          if (flags & O.O_EXCL) {
-            myflags = 'wx+';
+        // Otherwise, BrowserFS is ready-to-use!
+        var fs = BrowserFS.BFSRequire('fs');
+        var Buffer = BrowserFS.BFSRequire('buffer').Buffer;        
+        window.fs = fs;
+        window.Buffer = Buffer;
+    
+        window.fs.constants = {
+          O_RDONLY: 0,
+          O_WRONLY: 1,
+          O_RDWR: 2,
+          O_CREAT: 64,
+          O_EXCL: 128,
+          O_NOCTTY: 256,
+          O_TRUNC: 512,
+          O_APPEND: 1024,
+          O_DIRECTORY: 65536,
+          O_NOATIME: 262144,
+          O_NOFOLLOW: 131072,
+          O_SYNC: 1052672,
+          O_DIRECT: 16384,
+          O_NONBLOCK: 2048,
+        };
+    
+        let outputBuf = "";
+    
+        // Taken from
+        // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L186
+        const encoder = new TextEncoder("utf-8");
+        const decoder = new TextDecoder("utf-8");
+    
+        // Largely taken from
+        // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L62
+        window.fs.writeSyncOriginal = window.fs.writeSync
+        window.fs.writeSync = function(fd, buf) {
+          // console.log('d2');
+          if (fd === 1 || fd === 2) {
+            outputBuf += decoder.decode(buf);
+            const nl = outputBuf.lastIndexOf("\n");
+            if (nl != -1) {
+              console.log(outputBuf.substr(0, nl));
+              outputBuf = outputBuf.substr(nl + 1);
+            }
+            return buf.length;
           } else {
-            myflags = 'w+';
+            return window.fs.writeSyncOriginal(...arguments);
           }
-        } else { // r+
-          myflags = 'r+';
+        };
+    
+        window.fs.writeOriginal = window.fs.write
+        window.fs.write = function(fd, buf, offset, length, position, callback) {
+          console.log('d1');
+          if (fd === 1 || fd === 2) {
+            if (offset !== 0 || length !== buf.length || position !== null) {
+              throw new Error("not implemented");
+            }
+            const n = this.writeSync(fd, buf);
+            callback(null, n, buf);
+          } else {
+            // buf:
+            arguments[1] = window.Buffer.from(arguments[1]);
+            return window.fs.writeOriginal(...arguments);
+          }
+        };
+    
+        window.fs.openOriginal = window.fs.open
+        window.fs.open = function(path, flags, mode, callback) {
+          var myflags = 'r';
+          var O = window.fs.constants;
+    
+          // Convert numeric flags to string flags
+          // FIXME: maybe wrong...
+          if (flags & O.O_WRONLY) { // 'w'
+            myflags = 'w';
+            if (flags & O.O_EXCL) {
+              myflags = 'wx';
+            }
+          } else if (flags & O.O_RDWR) { // 'r+' or 'w+'
+            if (flags & O.O_CREAT && flags & O.O_TRUNC) { // w+
+              if (flags & O.O_EXCL) {
+                myflags = 'wx+';
+              } else {
+                myflags = 'w+';
+              }
+            } else { // r+
+              myflags = 'r+';
+            }
+          } else if (flags & O.O_APPEND) { // 'a'
+            throw new Error("Not implmented");
+          }
+          // TODO: handle other cases
+    
+          console.log('d0', flags, O, myflags);
+          // myflags = "w+";
+          path = "/asdf"; // TODO: gotta unhardcode this.
+    
+          return window.fs.openOriginal(path, myflags, mode, callback);
+        };
+    
+        window.fs.fstatOriginal = window.fs.fstat;
+        window.fs.fstat = function(fd, callback) {
+          return window.fs.fstatOriginal(fd, function() {
+            var retStat = arguments[1];
+            if (retStat) {
+              delete retStat['fileData'];
+              retStat.atimeMs = retStat.atime.getTime();
+              retStat.mtimeMs = retStat.mtime.getTime();
+              retStat.ctimeMs = retStat.ctime.getTime();
+              retStat.birthtimeMs = retStat.birthtime.getTime();
+            }
+            return callback(arguments[0], retStat);
+    
+          });
+        };
+    
+        window.fs.closeOriginal = window.fs.close;
+        window.fs.close = function(fd, callback) {
+          return window.fs.closeOriginal(fd, function() {
+            if(typeof arguments[0] === 'undefined') arguments[0] = null;
+            return callback(...arguments);
+          });
         }
-      } else if (flags & O.O_APPEND) { // 'a'
-        throw new Error("Not implmented");
-      }
-      // TODO: handle other cases
-
-      console.log('d0', flags, O, myflags);
-      // myflags = "w+";
-      path = "/asdf"; // TODO: gotta unhardcode this.
-
-      return window.fs.openOriginal(path, myflags, mode, callback);
-    };
-
-    window.fs.fstatOriginal = window.fs.fstat;
-    window.fs.fstat = function(fd, callback) {
-      return window.fs.fstatOriginal(fd, function() {
-        var retStat = arguments[1];
-        if (retStat) {
-          delete retStat['fileData'];
-          retStat.atimeMs = retStat.atime.getTime();
-          retStat.mtimeMs = retStat.mtime.getTime();
-          retStat.ctimeMs = retStat.ctime.getTime();
-          retStat.birthtimeMs = retStat.birthtime.getTime();
+    
+        window.fs.statOriginal = window.fs.stat;
+        window.fs.stat = function(path, callback) {
+          // callback();
+          path = "/asdf"; // TODO: gotta unhardcode this.
+          return window.fs.statOriginal(path, function() {
+            console.log('stat debug', arguments);
+    
+            var retStat = arguments[1];
+    
+            // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+            // console.log('d4', arguments[1]);
+            if (retStat) {
+              if (retStat.fileData) { delete retStat['fileData']; }
+              retStat.atimeMs = retStat.atime.getTime();
+              retStat.mtimeMs = retStat.mtime.getTime();
+              retStat.ctimeMs = retStat.ctime.getTime();
+              retStat.birthtimeMs = retStat.birthtime.getTime();
+            }
+    
+            return callback(arguments[0], retStat);
+            // return callback(...arguments);
+          });
+          // stat(path, callback) { callback(enosys()); },
         }
-        return callback(arguments[0], retStat);
-
-      });
-    };
-
-    window.fs.closeOriginal = window.fs.close;
-    window.fs.close = function(fd, callback) {
-      return window.fs.closeOriginal(fd, function() {
-        if(typeof arguments[0] === 'undefined') arguments[0] = null;
-        return callback(...arguments);
-      });
-    }
-
-    window.fs.statOriginal = window.fs.stat;
-    window.fs.stat = function(path, callback) {
-      // callback();
-      path = "/asdf"; // TODO: gotta unhardcode this.
-      return window.fs.statOriginal(path, function() {
-        console.log('stat debug', arguments);
-
-        var retStat = arguments[1];
-
-        // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
-        // console.log('d4', arguments[1]);
-        if (retStat) {
-          if (retStat.fileData) { delete retStat['fileData']; }
-          retStat.atimeMs = retStat.atime.getTime();
-          retStat.mtimeMs = retStat.mtime.getTime();
-          retStat.ctimeMs = retStat.ctime.getTime();
-          retStat.birthtimeMs = retStat.birthtime.getTime();
+    
+        window.fs.unlinkOriginal = window.fs.unlink;
+        window.fs.unlink = function(path, callback) {
+          // callback();
+          path = "/asdf"; // TODO: gotta unhardcode this.
+          return window.fs.unlinkOriginal(path, function() {
+            // var retStat = arguments[1];
+    
+            console.log('unlink debug', arguments);
+    
+            // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+            // // console.log('d4', arguments[1]);
+            // if (retStat) {
+            //   if (retStat.fileData) { delete retStat['fileData']; }
+            //   retStat.atimeMs = retStat.atime.getTime();
+            //   retStat.mtimeMs = retStat.mtime.getTime();
+            //   retStat.ctimeMs = retStat.ctime.getTime();
+            //   retStat.birthtimeMs = retStat.birthtime.getTime();
+            // }
+            // console.log('d4', retStat);
+    
+            arguments[0].code = "";
+            arguments[0].errno = 0;
+    
+            return callback(null, arguments[1]);
+            // return callback(arguments[0], arguments[1]);
+            // return callback(arguments[0], retStat);
+            // return callback(...arguments);
+          });
         }
-
-        return callback(arguments[0], retStat);
-        // return callback(...arguments);
-      });
-      // stat(path, callback) { callback(enosys()); },
-    }
-
-    window.fs.unlinkOriginal = window.fs.unlink;
-    window.fs.unlink = function(path, callback) {
-      // callback();
-      path = "/asdf"; // TODO: gotta unhardcode this.
-      return window.fs.unlinkOriginal(path, function() {
-        // var retStat = arguments[1];
-
-        console.log('unlink debug', arguments);
-
-        // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
-        // // console.log('d4', arguments[1]);
-        // if (retStat) {
-        //   if (retStat.fileData) { delete retStat['fileData']; }
-        //   retStat.atimeMs = retStat.atime.getTime();
-        //   retStat.mtimeMs = retStat.mtime.getTime();
-        //   retStat.ctimeMs = retStat.ctime.getTime();
-        //   retStat.birthtimeMs = retStat.birthtime.getTime();
+    
+        window.fs.mkdirOriginal = window.fs.mkdir;
+        window.fs.mkdir = function(path, callback) {
+          // callback();
+          path = "/asdf"; // TODO: gotta unhardcode this.
+          return window.fs.mkdirOriginal(path, function() {
+            // var retStat = arguments[1];
+    
+            console.log('mkdir debug', arguments);
+    
+            // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+            // // console.log('d4', arguments[1]);
+            // if (retStat) {
+            //   if (retStat.fileData) { delete retStat['fileData']; }
+            //   retStat.atimeMs = retStat.atime.getTime();
+            //   retStat.mtimeMs = retStat.mtime.getTime();
+            //   retStat.ctimeMs = retStat.ctime.getTime();
+            //   retStat.birthtimeMs = retStat.birthtime.getTime();
+            // }
+            // console.log('d4', retStat);
+    
+            // arguments[0].code = "";
+            // arguments[0].errno = 0;
+    
+            if (callback) {
+              return callback(...arguments);
+            }
+            // return callback(null, arguments[1]);
+            // return callback(arguments[0], arguments[1]);
+            // return callback(arguments[0], retStat);
+            // return callback(...arguments);
+          });
+        }
+    
+        // // TODO: to really make it work.
+        // window.fs.mkdir = function() {
+        //   console.log('mkdir?')
         // }
-        // console.log('d4', retStat);
-
-        arguments[0].code = "";
-        arguments[0].errno = 0;
-
-        return callback(null, arguments[1]);
-        // return callback(arguments[0], arguments[1]);
-        // return callback(arguments[0], retStat);
-        // return callback(...arguments);
+    
+        init();
       });
-    }
-
-    window.fs.mkdirOriginal = window.fs.mkdir;
-    window.fs.mkdir = function(path, callback) {
-      // callback();
-      path = "/asdf"; // TODO: gotta unhardcode this.
-      return window.fs.mkdirOriginal(path, function() {
-        // var retStat = arguments[1];
-
-        console.log('mkdir debug', arguments);
-
-        // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
-        // // console.log('d4', arguments[1]);
-        // if (retStat) {
-        //   if (retStat.fileData) { delete retStat['fileData']; }
-        //   retStat.atimeMs = retStat.atime.getTime();
-        //   retStat.mtimeMs = retStat.mtime.getTime();
-        //   retStat.ctimeMs = retStat.ctime.getTime();
-        //   retStat.birthtimeMs = retStat.birthtime.getTime();
-        // }
-        // console.log('d4', retStat);
-
-        // arguments[0].code = "";
-        // arguments[0].errno = 0;
-
-        if (callback) {
-          return callback(...arguments);
-        }
-        // return callback(null, arguments[1]);
-        // return callback(arguments[0], arguments[1]);
-        // return callback(arguments[0], retStat);
-        // return callback(...arguments);
-      });
-    }
-
-    // // TODO: to really make it work.
-    // window.fs.mkdir = function() {
-    //   console.log('mkdir?')
-    // }
-
-    init();
-  });
 
 
 // @Hau this is the test harness you should tinker with. Ignore above <script>
-async function init() {
+ async function init() {
   const go = new Go();
   // let result = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), go.importObject)
   // let result = await WebAssembly.instantiateStreaming(fetch("sdkver.wasm"), go.importObject)
   let result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
+  // console.log(result)
   go.run(result.instance);
   console.log(initializeConfig(
     "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
-    "bls0chain", 31082 /*port*/, "http://nine.devnet-0chain.net/dns",
+    "bls0chain", 31082 /*port*/, "https://nine.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "https://seven.devnet-0chain.net/dns",
     10 /*cleanup worker minutes*/));
 
   // const wallet = {"client_id":"315f086bbfd16036323ff580a347583a7f028b6800e72973974b02d339acdcfd","client_key":"041942fcff2a5c2f326aa6e60d1c7bf6ee6575077eeb6ff42503098f810e5bdd91061317c241d6c1f42b44f3608e6073b4d55bc4176adf322fa93066dd3300958b0e349b342dc3d5be818419d81b02174a56c53aa883048f08bb564a940aca0ad6117ed1caaf4eb8a4121ff8d8712dc1094a9c9e447dde77225f8f8fedf91d581e","keys":[{"public_key":"041942fcff2a5c2f326aa6e60d1c7bf6ee6575077eeb6ff42503098f810e5bdd91061317c241d6c1f42b44f3608e6073b4d55bc4176adf322fa93066dd3300958b0e349b342dc3d5be818419d81b02174a56c53aa883048f08bb564a940aca0ad6117ed1caaf4eb8a4121ff8d8712dc1094a9c9e447dde77225f8f8fedf91d581e","private_key":"232dd37c45ef952c8ddaa7d722039b3b16ab981dd6b63a880829106e69d44584"}],"mnemonics":"shine salon physical paddle clock pulp boost elite fine diet intact video awake lesson movie drift reject license spoil sample proof canal harvest grab","version":"1.0","date_created":"2021-06-11 07:31:57.099459 -0500 CDT m=+0.609355876"};
-  const wallet = {"client_id":"a3fd5f9c238024bfa8c687cb4a07c28160ad6fa4cb50b6ae44b476676cded974","client_key":"d4fcf9b6bb4d551c40bbe0679a29b1fdd2573a439f3c0461abab9f0fc2542522c5783247c68e506fa40ac08c8789b9530eebbfa48f47b24d29b9947955b2ad01","keys":[{"public_key":"d4fcf9b6bb4d551c40bbe0679a29b1fdd2573a439f3c0461abab9f0fc2542522c5783247c68e506fa40ac08c8789b9530eebbfa48f47b24d29b9947955b2ad01","private_key":"c89f2527e312762b2f1f222cba5be2f51b005c102441f92dd06033f0e5218b15"}],"mnemonics":"thank trial bridge tired response second impose fragile spike letter valley month lift woman ocean dignity veteran sock prison vacant solve art guitar remember","version":"1.0","date_created":"53429-06-18 19:28:29"};
+  // const wallet = {"client_id":"a3fd5f9c238024bfa8c687cb4a07c28160ad6fa4cb50b6ae44b476676cded974","client_key":"d4fcf9b6bb4d551c40bbe0679a29b1fdd2573a439f3c0461abab9f0fc2542522c5783247c68e506fa40ac08c8789b9530eebbfa48f47b24d29b9947955b2ad01","keys":[{"public_key":"d4fcf9b6bb4d551c40bbe0679a29b1fdd2573a439f3c0461abab9f0fc2542522c5783247c68e506fa40ac08c8789b9530eebbfa48f47b24d29b9947955b2ad01","private_key":"c89f2527e312762b2f1f222cba5be2f51b005c102441f92dd06033f0e5218b15"}],"mnemonics":"thank trial bridge tired response second impose fragile spike letter valley month lift woman ocean dignity veteran sock prison vacant solve art guitar remember","version":"1.0","date_created":"53429-06-18 19:28:29"};
+  // const wallet = {"client_id":"88c73bf037ea6340968559f4cfe83d131d2a091c587ae7da9f0106740c0543f8","client_key":"ebff4d3577cd111285dd928fa6b899547ea1dff3665f1df83cdcae62b87458008b888fdbaf6bda5b1b253c12d2f6cb84097f54f6e1780fd951175e0d169ea280","keys":[{"public_key":"ebff4d3577cd111285dd928fa6b899547ea1dff3665f1df83cdcae62b87458008b888fdbaf6bda5b1b253c12d2f6cb84097f54f6e1780fd951175e0d169ea280","private_key":"2c5ff7c75cbe40ea320ddd2140bc63438bf6ed6b3bc877c405b512fe9b0fb620"}],"mnemonics":"punch allow top olive club theory broken short clean stool master select height sail eight above weasel moral extend pond copy rely run liquid","version":"1.0","date_created":"00:33:05 GMT+0545 (Nepal Time)"};
 
   const s_wallet = JSON.stringify(wallet);
 
+  // console.log(s_wallet)
+
   //const alloc = "476e1f55c03fa66a115be2433438aca541fabc4a016e124357e35f34ce745219";
-  const alloc = "5d66e75ab0eaf2d8b71ed8c0d7098cf4fc8eafd0e98f12b652f9c97f84fda049";
+  // const alloc = "5d66e75ab0eaf2d8b71ed8c0d7098cf4fc8eafd0e98f12b652f9c97f84fda049";
+  const alloc = "4769f198f1338ae608b6508f2118b048eb4e39c223051556177dfcaed4aa63d4";
+  
   let res = await GetClientEncryptedPublicKey(s_wallet);
   console.log(await res.text());
 
@@ -265,22 +271,23 @@ async function init() {
 
   // Input parameters are all strings.
 
-  // // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
-  // //   file /*e.g. contents of test.txt*/,
-  // //   encrypt /*"T" or "F"*/,
-  // //   fileAttrs)
-  // console.log('running test')
+  // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
+  //   file /*e.g. contents of test.txt*/,
+  //   encrypt /*"T" or "F"*/,
+  //   fileAttrs)
+
+  // console.log('-------------running test-------------')
   // let resUploadFile= await Upload(
   //   "POST",  // method
   //   alloc, // allocation
   //   s_wallet, // clientJSON
   //   "/", // remotePath
-  //   "demo2.txt", // Filename
+  //   "demo.txt", // Filename
   //   "./demo.txt", // file contents
   //   "T", // encrypt
   //   "" // fileAttrs
   // )
-  // console.log('running test, DONE')
+  // console.log('-----------------running test, DONE-----------------')
 
   // // Tested!
   // // This is download using remotepath.
@@ -289,7 +296,7 @@ async function init() {
   // await Download(
   //   alloc, // allocation
   //   s_wallet, // clientJSON
-  //   "/b.txt", // remotePath
+  //   "/2.txt", // remotePath
   //   "", // authTicket (not needed)
   //   "0", // numBlocks (not needed)
   //   "", // rx_pay (not needed)
@@ -297,24 +304,24 @@ async function init() {
   //   "" // lookuphash (not needed)
   // );
   // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
-  await Download(
-    alloc, // allocation
-    s_wallet, // clientJSON
-    "/test1.png", // remotePath
-    "", // authTicket (not needed)
-    "0", // numBlocks (not needed)
-    "", // rx_pay (not needed)
-    "", // file_name (not needed)
-    "" // lookuphash (not needed)
-  );
-  console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
-
-  // // Download(allocation, clientJSON, remotePath, authTicket, numBlocks,
-  // // rx_pay, file_name, lookuphash)
   // await Download(
   //   alloc, // allocation
   //   s_wallet, // clientJSON
-  //   "/b.txt", // remotePath
+  //   "/1.txt", // remotePath
+  //   "", // authTicket (not needed)
+  //   "0", // numBlocks (not needed)
+  //   "", // rx_pay (not needed)
+  //   "", // file_name (not needed)
+  //   "" // lookuphash (not needed)
+  // );
+  // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+  // Download(allocation, clientJSON, remotePath, authTicket, numBlocks,
+  // rx_pay, file_name, lookuphash)
+  // await Download(
+  //   alloc, // allocation
+  //   s_wallet, // clientJSON
+  //   "/1.txt", // remotePath
   //   "", // authTicket (not needed)
   //   "0", // numBlocks (not needed)
   //   "", // rx_pay (not needed)
@@ -384,7 +391,12 @@ async function init() {
   // )
 
 }
-</script>
+
+
+
+    </script>
+
+
 
   </head>
   <body></body>
