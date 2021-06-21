@@ -163,7 +163,7 @@
           });
           // stat(path, callback) { callback(enosys()); },
         }
-    
+
         window.fs.unlinkOriginal = window.fs.unlink;
         window.fs.unlink = function(path, callback) {
           // callback();
@@ -193,51 +193,46 @@
             // return callback(...arguments);
           });
         }
-    
-        window.fs.mkdirOriginal = window.fs.mkdir;
-        window.fs.mkdir = function(path, callback) {
-          // callback();
-          path = "/asdf"; // TODO: gotta unhardcode this.
-          return window.fs.mkdirOriginal(path, function() {
-            // var retStat = arguments[1];
-    
-            console.log('mkdir debug', arguments);
-    
-            // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
-            // // console.log('d4', arguments[1]);
-            // if (retStat) {
-            //   if (retStat.fileData) { delete retStat['fileData']; }
-            //   retStat.atimeMs = retStat.atime.getTime();
-            //   retStat.mtimeMs = retStat.mtime.getTime();
-            //   retStat.ctimeMs = retStat.ctime.getTime();
-            //   retStat.birthtimeMs = retStat.birthtime.getTime();
-            // }
-            // console.log('d4', retStat);
-    
-            // arguments[0].code = "";
-            // arguments[0].errno = 0;
-    
-            if (callback) {
-              return callback(...arguments);
-            }
-            // return callback(null, arguments[1]);
-            // return callback(arguments[0], arguments[1]);
-            // return callback(arguments[0], retStat);
-            // return callback(...arguments);
-          });
-        }
-    
-        // // TODO: to really make it work.
-        // window.fs.mkdir = function() {
-        //   console.log('mkdir?')
+
+        // window.fs.mkdirOriginal = window.fs.mkdir;
+        // window.fs.mkdir = function(path, callback) {
+        //   // callback();
+        //   path = "/asdf"; // TODO: gotta unhardcode this.
+        //   return window.fs.mkdirOriginal(path, function() {
+        //     // var retStat = arguments[1];
+        //
+        //     console.log('mkdir debug', arguments);
+        //
+        //     // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+        //     // // console.log('d4', arguments[1]);
+        //     // if (retStat) {
+        //     //   if (retStat.fileData) { delete retStat['fileData']; }
+        //     //   retStat.atimeMs = retStat.atime.getTime();
+        //     //   retStat.mtimeMs = retStat.mtime.getTime();
+        //     //   retStat.ctimeMs = retStat.ctime.getTime();
+        //     //   retStat.birthtimeMs = retStat.birthtime.getTime();
+        //     // }
+        //     // console.log('d4', retStat);
+        //
+        //     // arguments[0].code = "";
+        //     // arguments[0].errno = 0;
+        //
+        //     if (callback) {
+        //       return callback(...arguments);
+        //     }
+        //     // return callback(null, arguments[1]);
+        //     // return callback(arguments[0], arguments[1]);
+        //     // return callback(arguments[0], retStat);
+        //     // return callback(...arguments);
+        //   });
         // }
-    
+
         init();
       });
 
 
 // @Hau this is the test harness you should tinker with. Ignore above <script>
- async function init() {
+async function init() {
   const go = new Go();
   // let result = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), go.importObject)
   // let result = await WebAssembly.instantiateStreaming(fetch("sdkver.wasm"), go.importObject)
@@ -246,7 +241,8 @@
   go.run(result.instance);
   console.log(initializeConfig(
     "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
-    "bls0chain", 31082 /*port*/, "https://nine.devnet-0chain.net/dns",
+    // "bls0chain", 31082 /*port*/, "http://dev.0chain.net/dns",
+    "bls0chain", 31082 /*port*/, "http://nine.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "https://seven.devnet-0chain.net/dns",
     10 /*cleanup worker minutes*/));
@@ -392,11 +388,22 @@
 
 }
 
+// Proof of concept for tinygo program.
+async function testtinygo() {
+  // Run the POC compiled by golang.
+  var go = new Go();
+  var result = await WebAssembly.instantiateStreaming(fetch("golang.wasm"), go.importObject)
+  go.run(result.instance);
 
+  // // Run the POC compiled by tinygo.
+  // var go = new Go();
+  // var result = await WebAssembly.instantiateStreaming(fetch("tinygo.wasm"), go.importObject)
+  // go.run(result.instance);
 
-    </script>
+}
+// testtinygo();
 
-
+</script>
 
   </head>
   <body></body>
