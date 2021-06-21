@@ -1,0 +1,421 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/BrowserFS/2.0.0/browserfs.js"></script>
+    <script src="wasm_exec.js"></script>
+
+    <!--
+  This section largely taken from, in order to get Golang's filesystem working in browser. 
+  You can probably ignore this.
+
+  https://dev.to/wcchoi/browser-side-pdf-processing-with-go-and-webassembly-13hn
+-->
+    <script>
+        // Configures BrowserFS to use the InMemory file system.
+        BrowserFS.configure({ fs: "InMemory" }, function (e) {
+            if (e) {
+                // An error happened!
+                throw e;
+            }
+            // Otherwise, BrowserFS is ready-to-use!
+            var fs = BrowserFS.BFSRequire('fs');
+            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+            window.fs = fs;
+            window.Buffer = Buffer;
+
+            window.fs.constants = {
+                O_RDONLY: 0,
+                O_WRONLY: 1,
+                O_RDWR: 2,
+                O_CREAT: 64,
+                O_EXCL: 128,
+                O_NOCTTY: 256,
+                O_TRUNC: 512,
+                O_APPEND: 1024,
+                O_DIRECTORY: 65536,
+                O_NOATIME: 262144,
+                O_NOFOLLOW: 131072,
+                O_SYNC: 1052672,
+                O_DIRECT: 16384,
+                O_NONBLOCK: 2048,
+            };
+
+            let outputBuf = "";
+
+            // Taken from
+            // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L186
+            const encoder = new TextEncoder("utf-8");
+            const decoder = new TextDecoder("utf-8");
+
+            // Largely taken from
+            // https://github.com/wcchoi/go-wasm-pdfcpu/blob/master/wasm_exec.js#L62
+            window.fs.writeSyncOriginal = window.fs.writeSync
+            window.fs.writeSync = function (fd, buf) {
+                // console.log('d2');
+                if (fd === 1 || fd === 2) {
+                    outputBuf += decoder.decode(buf);
+                    const nl = outputBuf.lastIndexOf("\n");
+                    if (nl != -1) {
+                        console.log(outputBuf.substr(0, nl));
+                        outputBuf = outputBuf.substr(nl + 1);
+                    }
+                    return buf.length;
+                } else {
+                    return window.fs.writeSyncOriginal(...arguments);
+                }
+            };
+
+            window.fs.writeOriginal = window.fs.write
+            window.fs.write = function (fd, buf, offset, length, position, callback) {
+                console.log('d1');
+                if (fd === 1 || fd === 2) {
+                    if (offset !== 0 || length !== buf.length || position !== null) {
+                        throw new Error("not implemented");
+                    }
+                    const n = this.writeSync(fd, buf);
+                    callback(null, n, buf);
+                } else {
+                    // buf:
+                    arguments[1] = window.Buffer.from(arguments[1]);
+                    return window.fs.writeOriginal(...arguments);
+                }
+            };
+
+            window.fs.openOriginal = window.fs.open
+            window.fs.open = function (path, flags, mode, callback) {
+                var myflags = 'r';
+                var O = window.fs.constants;
+
+                // Convert numeric flags to string flags
+                // FIXME: maybe wrong...
+                if (flags & O.O_WRONLY) { // 'w'
+                    myflags = 'w';
+                    if (flags & O.O_EXCL) {
+                        myflags = 'wx';
+                    }
+                } else if (flags & O.O_RDWR) { // 'r+' or 'w+'
+                    if (flags & O.O_CREAT && flags & O.O_TRUNC) { // w+
+                        if (flags & O.O_EXCL) {
+                            myflags = 'wx+';
+                        } else {
+                            myflags = 'w+';
+                        }
+                    } else { // r+
+                        myflags = 'r+';
+                    }
+                } else if (flags & O.O_APPEND) { // 'a'
+                    throw new Error("Not implmented");
+                }
+                // TODO: handle other cases
+
+                console.log('d0', flags, O, myflags);
+                // myflags = "w+";
+                path = "/asdf"; // TODO: gotta unhardcode this.
+
+                return window.fs.openOriginal(path, myflags, mode, callback);
+            };
+
+            window.fs.fstatOriginal = window.fs.fstat;
+            window.fs.fstat = function (fd, callback) {
+                return window.fs.fstatOriginal(fd, function () {
+                    var retStat = arguments[1];
+                    if (retStat) {
+                        delete retStat['fileData'];
+                        retStat.atimeMs = retStat.atime.getTime();
+                        retStat.mtimeMs = retStat.mtime.getTime();
+                        retStat.ctimeMs = retStat.ctime.getTime();
+                        retStat.birthtimeMs = retStat.birthtime.getTime();
+                    }
+                    return callback(arguments[0], retStat);
+
+                });
+            };
+
+            window.fs.closeOriginal = window.fs.close;
+            window.fs.close = function (fd, callback) {
+                return window.fs.closeOriginal(fd, function () {
+                    if (typeof arguments[0] === 'undefined') arguments[0] = null;
+                    return callback(...arguments);
+                });
+            }
+
+            window.fs.statOriginal = window.fs.stat;
+            window.fs.stat = function (path, callback) {
+                // callback();
+                path = "/asdf"; // TODO: gotta unhardcode this.
+                return window.fs.statOriginal(path, function () {
+                    console.log('stat debug', arguments);
+
+                    var retStat = arguments[1];
+
+                    // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+                    // console.log('d4', arguments[1]);
+                    if (retStat) {
+                        if (retStat.fileData) { delete retStat['fileData']; }
+                        retStat.atimeMs = retStat.atime.getTime();
+                        retStat.mtimeMs = retStat.mtime.getTime();
+                        retStat.ctimeMs = retStat.ctime.getTime();
+                        retStat.birthtimeMs = retStat.birthtime.getTime();
+                    }
+
+                    return callback(arguments[0], retStat);
+                    // return callback(...arguments);
+                });
+                // stat(path, callback) { callback(enosys()); },
+            }
+
+            window.fs.unlinkOriginal = window.fs.unlink;
+            window.fs.unlink = function (path, callback) {
+                // callback();
+                path = "/asdf"; // TODO: gotta unhardcode this.
+                return window.fs.unlinkOriginal(path, function () {
+                    // var retStat = arguments[1];
+
+                    console.log('unlink debug', arguments);
+
+                    // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+                    // // console.log('d4', arguments[1]);
+                    // if (retStat) {
+                    //   if (retStat.fileData) { delete retStat['fileData']; }
+                    //   retStat.atimeMs = retStat.atime.getTime();
+                    //   retStat.mtimeMs = retStat.mtime.getTime();
+                    //   retStat.ctimeMs = retStat.ctime.getTime();
+                    //   retStat.birthtimeMs = retStat.birthtime.getTime();
+                    // }
+                    // console.log('d4', retStat);
+
+                    arguments[0].code = "";
+                    arguments[0].errno = 0;
+
+                    return callback(null, arguments[1]);
+                    // return callback(arguments[0], arguments[1]);
+                    // return callback(arguments[0], retStat);
+                    // return callback(...arguments);
+                });
+            }
+
+            window.fs.mkdirOriginal = window.fs.mkdir;
+            window.fs.mkdir = function (path, callback) {
+                // callback();
+                path = "/asdf"; // TODO: gotta unhardcode this.
+                return window.fs.mkdirOriginal(path, function () {
+                    // var retStat = arguments[1];
+
+                    console.log('mkdir debug', arguments);
+
+                    // // console.log('d4', arguments[0], JSON.stringify(arguments[1]));
+                    // // console.log('d4', arguments[1]);
+                    // if (retStat) {
+                    //   if (retStat.fileData) { delete retStat['fileData']; }
+                    //   retStat.atimeMs = retStat.atime.getTime();
+                    //   retStat.mtimeMs = retStat.mtime.getTime();
+                    //   retStat.ctimeMs = retStat.ctime.getTime();
+                    //   retStat.birthtimeMs = retStat.birthtime.getTime();
+                    // }
+                    // console.log('d4', retStat);
+
+                    // arguments[0].code = "";
+                    // arguments[0].errno = 0;
+
+                    if (callback) {
+                        return callback(...arguments);
+                    }
+                    // return callback(null, arguments[1]);
+                    // return callback(arguments[0], arguments[1]);
+                    // return callback(arguments[0], retStat);
+                    // return callback(...arguments);
+                });
+            }
+
+            // // TODO: to really make it work.
+            // window.fs.mkdir = function() {
+            //   console.log('mkdir?')
+            // }
+
+            init();
+        });
+
+
+        // @Hau this is the test harness you should tinker with. Ignore above <script>
+        async function init() {
+            const go = new Go();
+            // let result = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), go.importObject)
+            // let result = await WebAssembly.instantiateStreaming(fetch("sdkver.wasm"), go.importObject)
+            let result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
+            go.run(result.instance);
+            console.log(initializeConfig(
+                "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
+                "bls0chain", 31082 /*port*/, "http://nine.devnet-0chain.net/dns",
+                // "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
+                // "bls0chain", 31082 /*port*/, "https://seven.devnet-0chain.net/dns",
+                10 /*cleanup worker minutes*/));
+
+            const wallet = { "client_id": "d198624111f66033c985bc6ef9c32fb848ce64aaa502c2b0624dc28f9932eb42", "client_key": "04222a4188172bfb52744eaa59356bddcd1939f90f8404e5c8418420e47a49738818d9254dada8061eac7ef9a2dae17faee5f1387090c763e4d1b944e8c37258721b5f75d5f7e9d5715abbefdd94ac6537ce063d16f26dedc929b30f1193f7cf8c156c4b2e0152d7a463a8a2a8b0ab94e9be96858e3a625c2d198a09f42c5d70e9", "keys": [{ "public_key": "04222a4188172bfb52744eaa59356bddcd1939f90f8404e5c8418420e47a49738818d9254dada8061eac7ef9a2dae17faee5f1387090c763e4d1b944e8c37258721b5f75d5f7e9d5715abbefdd94ac6537ce063d16f26dedc929b30f1193f7cf8c156c4b2e0152d7a463a8a2a8b0ab94e9be96858e3a625c2d198a09f42c5d70e9", "private_key": "1c63a65d6144536c92835ac7362970acaf62fa76c62abf7ba1414c58b840b13b" }], "mnemonics": "woman heart sponsor cushion style weekend master kind mutual orchard cycle smoke tide tool fox flight metal answer glad expect broccoli thank stool tiny", "version": "1.0", "date_created": "2021-06-18 13:49:04.228770396 +0700 +07 m=+1.633956380" };
+            const walletShared = { "client_id": "a04a3e7ffd9e7292a71dad5eda25b10b094e660fdac44e21e2bc0456cd1d7c17", "client_key": "041ae74f52720fa62f4ff28f1f46ac1d3e6a7490d3d1df49bc6337a901b90218b80755ff50f63ce61f7d1837181f7da9f4ff2c39189273ff0ee59e6df6c2d998bc01a8a7d907d3e8aa41862f6e5fbaaa9cc14ab5d9b56a1894a39ae60af1c415e805e71aa037e7e39c1fe97e1ac27603e12b7015de5372ac38d0318085b89efe6f", "keys": [{ "public_key": "041ae74f52720fa62f4ff28f1f46ac1d3e6a7490d3d1df49bc6337a901b90218b80755ff50f63ce61f7d1837181f7da9f4ff2c39189273ff0ee59e6df6c2d998bc01a8a7d907d3e8aa41862f6e5fbaaa9cc14ab5d9b56a1894a39ae60af1c415e805e71aa037e7e39c1fe97e1ac27603e12b7015de5372ac38d0318085b89efe6f", "private_key": "0b7d894264ad35aac1acbfda9703829a29474c09edb2535d4c47dc9eeaba65a3" }], "mnemonics": "fiber hammer squeeze become regular body crater eternal grant excess empower cannon stairs display update element fee machine coyote social twin just valid congress", "version": "1.0", "date_created": "2021-06-18 16:01:17.234496082 +0700 +07 m=+2.633812785" };
+
+            const s_wallet = JSON.stringify(wallet);
+            const s_wallet_shared = JSON.stringify(walletShared);
+            const alloc = "786a14e1e8a81ca30b86685b4d8252a8244c83a6ba92ad29be323f46b0434a09";
+            const alloc_shared = "89e8fe54e8f72178e2511d6765388f612b317df8715fe3cf6ed4253968b90e3e";
+
+            let res = await GetClientEncryptedPublicKey(s_wallet);
+            console.log(await res.text());
+
+
+            // // Upload(method "POST" or "PUT", allocation, clientJSON, remotePath, Filename,
+            // //   file /*e.g. contents of test.txt*/,
+            // //   encrypt /*"T" or "F"*/,
+            // //   fileAttrs)
+
+            //   ==1. Hau tested function upload file normal: ok
+            // console.log('running test')
+            // let resUploadFile= await Upload(
+            //   "POST",  // method
+            //   alloc, // allocation
+            //   s_wallet, // clientJSON
+            //   "/", // remotePath
+            //   "./demo.txt", // Filename
+            //   "./demo.txt", // file contents
+            //   "T", // encrypt
+            //   "" // fileAttrs
+            // )
+            // console.log('running test, DONE')
+
+
+            //   ==2. Hau tested function download file normal: ok
+            //   await Download(
+            //     alloc, // allocation
+            //     s_wallet, // clientJSON
+            //     "/1.txt", // remotePath
+            //     "", // authTicket (not needed)
+            //     "0", // numBlocks (not needed)
+            //     "", // rx_pay (not needed)
+            //     "", // file_name (not needed)
+            //     "" // lookuphash (not needed)
+            //   );
+            //   console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+
+            //    ==3. Hau tested function download file encrypt: ok
+            //   await Download(
+            //     alloc, // allocation
+            //     s_wallet, // clientJSON
+            //     "/testEncrypt1.txt", // remotePath
+            //     "", // authTicket (not needed)
+            //     "0", // numBlocks (not needed)
+            //     "", // rx_pay (not needed)
+            //     "", // file_name (not needed)
+            //     "" // lookuphash (not needed)
+            //   );
+            //   console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+            //    ==4. Hau tested function download file using lookuphash: ok
+            // r = await Share(
+            //     alloc,
+            //     s_wallet, // clientJSON
+            //     "/test1", // remotePath
+            //     "", // refereeClientID
+            //     "" // encryptionpublickey
+            // );
+            // let auth = await r.text()
+            // await Download(
+            //     alloc, // allocation
+            //     s_wallet, // clientJSON
+            //     "", // remotePath
+            //     auth, // authTicket (not needed)
+            //     "0", // numBlocks (not needed)
+            //     "", // rx_pay (not needed)
+            //     "", // file_name (not needed)
+            //     "7ac489928ecbe83717f7fe92db3f53dfff8d92dc161c70aa095491670d131ba2" // lookuphash (not needed)
+            // );
+            // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+            //   ==5. Hau tested function download file normal using authTicket: ok
+            //   r = await Share(
+            //     alloc,
+            //     s_wallet, // clientJSON
+            //     "/1.txt", // remotePath
+            //     "", // refereeClientID
+            //     "" // encryptionpublickey
+            //   );
+            //   let auth = await r.text()
+            //   console.log('Share done, auth ticket', auth);
+            //   await Download(
+            //     alloc, // allocation (not needed)
+            //     s_wallet, // clientJSON
+            //     "", // remotePath (not needed)
+            //     auth, // authTicket
+            //     "0", // numBlocks (not needed)
+            //     "", // rx_pay (not needed)
+            //     "", // file_name (not needed)
+            //     "" // lookuphash (not needed)
+            //   );
+            //    console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+
+            //   ==6. Hau tested function download file encrypt using authTicket, refereeClientID, encryptionpublickey : ok
+            // let publicEncryptedPublicKey = await GetClientEncryptedPublicKey(s_wallet_shared);
+            // publicEncryptedPublicKey = await publicEncryptedPublicKey.text();
+            // r = await Share(
+            //     alloc,
+            //     s_wallet, // clientJSON
+            //     "/testEncrypt1.txt", // remotePath
+            //     "a04a3e7ffd9e7292a71dad5eda25b10b094e660fdac44e21e2bc0456cd1d7c17", // refereeClientID
+            //     publicEncryptedPublicKey // encryptionpublickey
+            // );
+
+            // let auth = await r.text()
+            // await Download(
+            //     alloc_shared, // allocation (not needed)
+            //     s_wallet_shared, // clientJSON
+            //     "", // remotePath (not needed)
+            //     auth, // authTicket
+            //     "0", // numBlocks (not needed)
+            //     "", // rx_pay (not needed)
+            //     "", // file_name (not needed)
+            //     "" // lookuphash (not needed)
+            // );
+            // console.log('file downloaded: ', window.fs.readFileSync("/asdf").toString());
+
+
+            //   ==7. Hau tested function rename : ok
+
+            //   await Rename(
+            //     alloc,
+            //     s_wallet, // clientJSON
+            //     "/2.txt", // remotePath
+            //     "b.txt" // newName
+            //   )
+
+            // ==8. Hau tested function copy : ok
+            //   await Copy(
+            //     alloc, // allocation
+            //     s_wallet, // clientJSON
+            //     "/test1/testCopy.txt", // remotePath
+            //     "/" // destPath
+            //   )
+
+            // ==9. Hau tested function delete : ok
+            //   await Delete(
+            //     alloc,
+            //     s_wallet, // clientJSON
+            //     "/testEncrypt.txt" // remotePath
+            //   )
+
+            // ==10. Hau tested function move copy : ok
+            //   await Move(
+            //     alloc,
+            //     s_wallet, // clientJSON
+            //     "/1.txt", // remotePath
+            //     "/test1" // destPath
+            //   )
+
+        }
+    </script>
+
+</head>
+
+<body></body>
+
+</html>
