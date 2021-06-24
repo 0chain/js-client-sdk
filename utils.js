@@ -331,13 +331,15 @@ module.exports = {
                     } else {
                         console.log('consensusResponse', consensusResponse);
                         // Added patch for converting http to https
-                        if (window.location.protocol === 'https:' && consensusResponse.data && consensusResponse.data.blobbers && Array.isArray(consensusResponse.data.blobbers)) {
+                        const isHttpsOrLocal = window.location.protocol === "https" || window.location.hostname === "localhost"
+
+                        if (isHttpsOrLocal && consensusResponse.data && consensusResponse.data.blobbers && Array.isArray(consensusResponse.data.blobbers)) {
                             consensusResponse.data.blobbers.forEach((blobber) => {
                                 let currentURL = new URL(blobber.url);
                                 currentURL.protocol = 'https:';
                                 blobber.url = currentURL.protocol + '//' + currentURL.hostname + '/blobber' + currentURL.port.slice(-2);
                             });
-                        } else if (window.location.protocol === 'https:' && consensusResponse && consensusResponse.Nodes) {
+                        } else if (isHttpsOrLocal && consensusResponse && consensusResponse.Nodes) {
                             consensusResponse.Nodes.forEach((blobber) => {
                                 let currentURL = new URL(blobber.url);
                                 currentURL.protocol = 'https:';
