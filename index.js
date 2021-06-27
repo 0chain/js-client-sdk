@@ -72,6 +72,7 @@ const Endpoints = {
     //STAKING
     GET_STORAGESC_POOL_STATS: "v1/screst/" + StorageSmartContractAddress + "/getUserStakePoolStat",
     GET_MINERSC_POOL_STATS: "v1/screst/" + MinerSmartContractAddress + "/getUserPools",
+    GET_STAKE_POOL_STAT : "v1/screst/" + StorageSmartContractAddress+"/getStakePoolStat",
 
     //BLOBBER
     ALLOCATION_FILE_LIST: "/v1/file/list/",
@@ -86,6 +87,7 @@ const Endpoints = {
     OBJECT_TREE_ENDPOINT: '/v1/file/objecttree/',
     COMMIT_META_TXN_ENDPOINT: "/v1/file/commitmetatxn/",
 
+    //PROXY
     PROXY_SERVER_UPLOAD_ENDPOINT: "/upload",
     PROXY_SERVER_DOWNLOAD_ENDPOINT: "/download",
     PROXY_SERVER_SHARE_ENDPOINT: "/share",
@@ -332,8 +334,11 @@ module.exports = {
     registerClient: async function registerClient() {
         const mnemonic = bip39.generateMnemonic(256);
         const wallet = await createWallet(mnemonic);
+        // window.walletInfo = wallet;
+
         //creating read pool
         await this.createReadPool(wallet)
+        // console.log(wallet,"wallet")
         return wallet;
     },
 
@@ -607,6 +612,21 @@ module.exports = {
         });
     },
 
+    getStakePoolStat:(blobber_id)=>{
+        return new Promise(async function (resolve,reject){
+            let stakePoolStat = await utils.getConsensusedInformationFromSharders(sharders,Endpoints.GET_STAKE_POOL_STAT,{blobber_id})
+                .then(res=>{
+                    // console.log(res,"res of stake of blobbers")
+                    return res
+                })
+                .catch(err=> null)
+            if(stakePoolStat ===null){
+                stakePoolStat = []
+            }
+            resolve({...stakePoolStat})
+        })
+    },
+
     createLockTokens: async function (ae, val, durationHr, durationMin) {
         const payload = {
             name: "lock",
@@ -697,6 +717,8 @@ module.exports = {
         const  detailedBlobbersCallingEachApi = await Promise.all(detailedBlobbers.map(async (dBl)=>{
             const blobData = await fetch(dBl.convertedUrl)
             const blobJson = await blobData.json()
+            const blobStakeStats = await this.getStakePoolStat(dBl.id)
+            blobJson.free_from_blobber_stake_stats = await blobStakeStats.free
             return {...blobJson,...dBl};
        }))  
         return detailedBlobbersCallingEachApi ;
