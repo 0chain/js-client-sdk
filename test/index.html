@@ -388,6 +388,20 @@ async function init() {
 
 }
 
+// Test ethwallet.go
+async function testethwallet() {
+  var mnemonic = "expect domain water near beauty bag pond clap chronic chronic length leisure";
+  var password = "Fhntvbb15";
+  var network = "https://ropsten.etherscan.io/address/0x531f9349ed2Fe5c526B47fa7841D35c90482e6cF";
+
+  var go = new Go();
+  var result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
+  go.run(result.instance);
+
+  var walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
+  console.log('walletaddr', walletaddr);
+}
+
 // Proof of concept for tinygo program.
 async function testtinygo() {
   // Run the POC compiled by golang.
@@ -401,7 +415,9 @@ async function testtinygo() {
   // go.run(result.instance);
 
 }
+
 // testtinygo();
+testethwallet();
 
 </script>
 
