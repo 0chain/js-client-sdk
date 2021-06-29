@@ -400,6 +400,15 @@ async function testethwallet() {
 
   var walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
   console.log('walletaddr', walletaddr);
+
+  var eth = TokensToEth("1000000000000000000");
+  console.log('eth', eth);
+
+  var res2 = EthToTokens(0.1);
+  console.log('res2', res2);
+
+
+
 }
 
 // Proof of concept for tinygo program.
