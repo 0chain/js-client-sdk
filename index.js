@@ -401,7 +401,9 @@ module.exports = {
             return date;
         }
 
-        expiration_date = Math.floor(expiration_date.addDays(30).getTime() / 1000)
+        expiration_date = Math.floor(expiration_date.addDays(20).getTime() / 1000)
+
+        // console.log(expiration_date,"exp")
 
         const payload = {
             name: "new_allocation_request",
@@ -418,6 +420,8 @@ module.exports = {
                 preferred_blobbers,
             },
         };
+        // console.log(payload,"create allocation payload")
+
 
         return this.executeSmartContract(
             ae,
@@ -711,13 +715,15 @@ module.exports = {
         const currentBlobbers = await this.getAllBlobbers();
         const detailedBlobbers = currentBlobbers.map((blobber)=>{ 
             const blobberUrl = new URL(blobber.url)
-            blobber.convertedUrl = blobberUrl.protocol+'//'+blobberUrl.hostname +'/blobber'+ blobberUrl.port.slice(-2)+'/_statsJSON'
+            blobber.convertedUrl = 'https://'+blobberUrl.hostname +'/blobber'+ blobberUrl.port.slice(-2)+'/_statsJSON'
+            // console.log(blobber,"blobber info from dets")
             return blobber;
         })
         const  detailedBlobbersCallingEachApi = await Promise.all(detailedBlobbers.map(async (dBl)=>{
             const blobData = await fetch(dBl.convertedUrl)
             const blobJson = await blobData.json()
             const blobStakeStats = await this.getStakePoolStat(dBl.id)
+            // console.log(blobStakeStats,"blob stake stats")
             blobJson.free_from_blobber_stake_stats = await blobStakeStats.free
             return {...blobJson,...dBl};
        }))  
@@ -783,6 +789,7 @@ module.exports = {
                 const blobber_url = blobber.url + Endpoints.FILE_STATS_ENDPOINT + allocation_id;
                 await utils.postReqToBlobber(blobber_url, {}, { path: path }, client_id)
                     .then((response) => {
+                       // console.log(response,"response from blobbers")
                         allBlobbersResponse.push({ ...response.data, url: blobber.url })
                     }).catch((err) => {
                         console.log(err)
@@ -1072,7 +1079,6 @@ module.exports = {
     VerificationTicket: models.VerificationTicket,
     utils: utils,
     TransactionType: TransactionType
-
 }
 
 ///^^^^^^  End of expored functions   ^^^^^^////////
@@ -1198,7 +1204,10 @@ async function submitTransaction(ae, toClientId, val, note, transaction_type) {
     data.hash = hash;
     data.transaction_fee = 0;
     data.signature = sig.serializeToHexStr();
-    data.version = '1.0'
+    data.version = '1.0';
+    data.txn_output_hash = "";
+    data.public_key = ae.public_key;
+    
     return new Promise(function (resolve, reject) {
         utils.doParallelPostReqToAllMiners(miners, Endpoints.PUT_TRANSACTION, data)
             .then((response) => {
