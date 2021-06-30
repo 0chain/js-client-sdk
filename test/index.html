@@ -401,14 +401,28 @@ async function testethwallet() {
   var walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
   console.log('walletaddr', walletaddr);
 
-  var eth = TokensToEth("1000000000000000000");
-  console.log('eth', eth);
+  // var eth = TokensToEth("1000000000000000000");
+  // console.log('eth', eth);
 
-  var res2 = EthToTokens(0.1);
-  console.log('res2', res2);
+  // var res2 = EthToTokens(1);
+  // console.log('res2', res2);
 
+  // let res3= GTokensToEth("100000");
+  // console.log('res 3', res3);
 
+  // let res4 =GEthToTokens(100);
+  // console.log('res4', res4)
 
+ 
+  // let res5= await ConvertZcnTokenToETH(1200.3);
+  // console.log('res 5', res5);
+  // walletaddr= JSON.parse(walletaddr);
+  // console.log('privatek keey' , walletaddr.PrivateKey);
+  let res6= await SuggestEthGasPrice(walletaddr.PrivateKey,1000,2000);
+  console.log('res 6', res6);
+  
+  let res7=await CreateWalletFromEthMnemonic(mnemonic, password);
+  console.log('res 7', res7)
 }
 
 // Proof of concept for tinygo program.
