@@ -416,8 +416,8 @@ async function testethwallet() {
  
   // let res5= await ConvertZcnTokenToETH(1200.3);
   // console.log('res 5', res5);
-  // walletaddr= JSON.parse(walletaddr);
-  // console.log('privatek keey' , walletaddr.PrivateKey);
+  walletaddr= JSON.parse(walletaddr);
+  console.log('privatek keey' , walletaddr.PrivateKey);
   let res6= await SuggestEthGasPrice(walletaddr.PrivateKey,1000,2000);
   console.log('res 6', res6);
   
