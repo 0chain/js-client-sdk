@@ -388,6 +388,13 @@ async function init() {
 
 }
 
+// Taken from https://stackoverflow.com/a/39914235
+// Usage: await sleep(5000);
+// Should only be used as a quick hack to simulate await functionality.
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Test ethwallet.go
 async function testethwallet() {
   var mnemonic = "expect domain water near beauty bag pond clap chronic chronic length leisure";
@@ -401,6 +408,8 @@ async function testethwallet() {
   console.log('Running: InitZCNSDK');
   await InitZCNSDK("http://nine.devnet-0chain.net/dns", "bls0chain");
   console.log('Done running: InitZCNSDK');
+
+  await sleep(3000);
 
   var walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
   console.log('walletaddr', walletaddr);
