@@ -411,31 +411,71 @@ async function testethwallet() {
 
   await sleep(3000);
 
-  var walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
-  console.log('walletaddr', walletaddr);
+  
+  //// 1. Hau test function TokensToETH : pass
 
-  // var eth = TokensToEth("1000000000000000000");
-  // console.log('eth', eth);
+  // let res1 = TokensToEth("1000000000000000000");
+  // console.log('TokensToEth', res1);
 
-  // var res2 = EthToTokens(1);
-  // console.log('res2', res2);
+
+  ////===================================
+  //// 2. Hau test function EthToTokens : pass
+
+  // let res2 = EthToTokens(1);
+  // console.log('EthToTokens', res2);
+
+
+  ////===================================
+  //// 3. Hau test function GTokensToEth : pass
 
   // let res3= GTokensToEth("100000");
-  // console.log('res 3', res3);
+  // console.log('GTokensToEth', res3);
 
-  // let res4 =GEthToTokens(100);
-  // console.log('res4', res4)
+
+  ////===================================
+  //// 4. Hau test function GEthToTokens : pass
+
+  // let res4 = GEthToTokens(100);
+  // console.log('GEthToTokens', res4)
 
  
-  // let res5= await ConvertZcnTokenToETH(1200.3);
-  // console.log('res 5', res5);
-  walletaddr= JSON.parse(walletaddr);
-  console.log('privatek keey' , walletaddr.PrivateKey);
-  let res6= await SuggestEthGasPrice(walletaddr.PrivateKey,1000,2000);
-  console.log('res 6', res6);
+  ////===================================
+  //// 5. Hau test function GetWalletAddrFromEthMnemonic : pass
+
+  // let walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
+  // console.log('walletaddr', walletaddr);
+
+
+  ////===================================
+  //// 6. Hau test function ConvertZcnTokenToETH : fail(because error: context deadline exceeded) , this function return default value of golang = 0
+  // let res6= await ConvertZcnTokenToETH(1200.3);
+  // console.log('ConvertZcnTokenToETH ', res6);
+
+
+  ////===================================
+  //// 7. Hau test function SuggestEthGasPrice: fail(because error: Eth node SDK not initialized), this function return default value of golang = 0
+
+  // let res7= await SuggestEthGasPrice();
+  // console.log('SuggestEthGasPrice ', res7);
   
-  let res7=await CreateWalletFromEthMnemonic(mnemonic, password);
-  console.log('res 7', res7)
+
+  ////===================================
+  //// 8. Hau test function TransferEthTokens: fail(because error: Eth node SDK not initialized)
+
+  //// Remember run function GetWalletAddrFromEthMnemonic (item test 5) to get wallet address
+  // walletaddr= JSON.parse(walletaddr);
+  // console.log('private key' , walletaddr.PrivateKey);
+
+  // let res8= await TransferEthTokens(walletaddr.PrivateKey,"1000","2");
+  // console.log('TransferEthTokens ', res8);
+  
+
+  ////===================================
+  //// 9. Hau test function CreateWalletFromEthMnemonic: pass
+
+  // let res9= await CreateWalletFromEthMnemonic(mnemonic, password);
+  // console.log('CreateWalletFromEthMnemonic ', res9)  
+
 }
 
 // Proof of concept for tinygo program.
