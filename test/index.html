@@ -67,7 +67,6 @@
     
         window.fs.writeOriginal = window.fs.write
         window.fs.write = function(fd, buf, offset, length, position, callback) {
-          console.log('d1');
           if (fd === 1 || fd === 2) {
             if (offset !== 0 || length !== buf.length || position !== null) {
               throw new Error("not implemented");
@@ -239,14 +238,13 @@ async function init() {
   let result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
   // console.log(result)
   go.run(result.instance);
-  console.log(initializeConfig(
+  console.log('This is initializeConfig ',initializeConfig(
     "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
     // "bls0chain", 31082 /*port*/, "http://dev.0chain.net/dns",
-    "bls0chain", 31082 /*port*/, "http://nine.devnet-0chain.net/dns",
+    "bls0chain", 31082 /*port*/, "https://nine.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
     // "bls0chain", 31082 /*port*/, "https://seven.devnet-0chain.net/dns",
     10 /*cleanup worker minutes*/));
-
   // const wallet = {"client_id":"315f086bbfd16036323ff580a347583a7f028b6800e72973974b02d339acdcfd","client_key":"041942fcff2a5c2f326aa6e60d1c7bf6ee6575077eeb6ff42503098f810e5bdd91061317c241d6c1f42b44f3608e6073b4d55bc4176adf322fa93066dd3300958b0e349b342dc3d5be818419d81b02174a56c53aa883048f08bb564a940aca0ad6117ed1caaf4eb8a4121ff8d8712dc1094a9c9e447dde77225f8f8fedf91d581e","keys":[{"public_key":"041942fcff2a5c2f326aa6e60d1c7bf6ee6575077eeb6ff42503098f810e5bdd91061317c241d6c1f42b44f3608e6073b4d55bc4176adf322fa93066dd3300958b0e349b342dc3d5be818419d81b02174a56c53aa883048f08bb564a940aca0ad6117ed1caaf4eb8a4121ff8d8712dc1094a9c9e447dde77225f8f8fedf91d581e","private_key":"232dd37c45ef952c8ddaa7d722039b3b16ab981dd6b63a880829106e69d44584"}],"mnemonics":"shine salon physical paddle clock pulp boost elite fine diet intact video awake lesson movie drift reject license spoil sample proof canal harvest grab","version":"1.0","date_created":"2021-06-11 07:31:57.099459 -0500 CDT m=+0.609355876"};
   // const wallet = {"client_id":"a3fd5f9c238024bfa8c687cb4a07c28160ad6fa4cb50b6ae44b476676cded974","client_key":"d4fcf9b6bb4d551c40bbe0679a29b1fdd2573a439f3c0461abab9f0fc2542522c5783247c68e506fa40ac08c8789b9530eebbfa48f47b24d29b9947955b2ad01","keys":[{"public_key":"d4fcf9b6bb4d551c40bbe0679a29b1fdd2573a439f3c0461abab9f0fc2542522c5783247c68e506fa40ac08c8789b9530eebbfa48f47b24d29b9947955b2ad01","private_key":"c89f2527e312762b2f1f222cba5be2f51b005c102441f92dd06033f0e5218b15"}],"mnemonics":"thank trial bridge tired response second impose fragile spike letter valley month lift woman ocean dignity veteran sock prison vacant solve art guitar remember","version":"1.0","date_created":"53429-06-18 19:28:29"};
   // const wallet = {"client_id":"88c73bf037ea6340968559f4cfe83d131d2a091c587ae7da9f0106740c0543f8","client_key":"ebff4d3577cd111285dd928fa6b899547ea1dff3665f1df83cdcae62b87458008b888fdbaf6bda5b1b253c12d2f6cb84097f54f6e1780fd951175e0d169ea280","keys":[{"public_key":"ebff4d3577cd111285dd928fa6b899547ea1dff3665f1df83cdcae62b87458008b888fdbaf6bda5b1b253c12d2f6cb84097f54f6e1780fd951175e0d169ea280","private_key":"2c5ff7c75cbe40ea320ddd2140bc63438bf6ed6b3bc877c405b512fe9b0fb620"}],"mnemonics":"punch allow top olive club theory broken short clean stool master select height sail eight above weasel moral extend pond copy rely run liquid","version":"1.0","date_created":"00:33:05 GMT+0545 (Nepal Time)"};
@@ -404,6 +402,42 @@ async function testethwallet() {
   var go = new Go();
   var result = await WebAssembly.instantiateStreaming(fetch("proxy.wasm"), go.importObject)
   go.run(result.instance);
+  console.log('initializeConfig start ');
+  await initializeConfig(
+    "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
+    // "bls0chain", 31082 /*port*/, "http://dev.0chain.net/dns",
+    "bls0chain", 31082 /*port*/, "https://nine.devnet-0chain.net/dns",
+    // "bls0chain", 31082 /*port*/, "http://six.devnet-0chain.net/dns",
+    // "bls0chain", 31082 /*port*/, "https://seven.devnet-0chain.net/dns",
+    10 /*cleanup worker minutes*/)
+  console.log('Done initializeConfig');
+  await sleep(3000);
+
+
+  let config = {
+    "miners": [
+    "http://nine.devnet-0chain.net:31071/",
+    "http://nine.devnet-0chain.net:31072/",
+    "http://nine.devnet-0chain.net:31073/",
+  ],
+  "sharders": [
+    "http://nine.devnet-0chain.net:31171/",
+  ],
+    "chain_id":"0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe",
+    "signature_scheme" : "bls0chain",
+    "block_worker" : "https://nine.devnet-0chain.net/dns",
+    "min_submit" : 50,
+    "min_confirmation" : 50,
+    "confirmation_chain_length" : 3,
+    "num_keys" : 1,
+    "eth_node" : "https://ropsten.infura.io/v3/f0a254d8d18b4749bd8540da63b3292b"
+  };
+  config= JSON.stringify(config);
+  console.log('initStorageSDK start');
+  await initStorageSDK(config);
+  console.log('Done initStorageSDK');
+  await sleep(3000);
+
 
   console.log('Running: InitZCNSDK');
   await InitZCNSDK("http://nine.devnet-0chain.net/dns", "bls0chain");
@@ -411,7 +445,6 @@ async function testethwallet() {
 
   await sleep(3000);
 
-  
   //// 1. Hau test function TokensToETH : pass
 
   // let res1 = TokensToEth("1000000000000000000");
@@ -442,8 +475,8 @@ async function testethwallet() {
   ////===================================
   //// 5. Hau test function GetWalletAddrFromEthMnemonic : pass
 
-  // let walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
-  // console.log('walletaddr', walletaddr);
+  let walletaddr = GetWalletAddrFromEthMnemonic(mnemonic);
+  console.log('walletaddr', walletaddr);
 
 
   ////===================================
@@ -463,11 +496,11 @@ async function testethwallet() {
   //// 8. Hau test function TransferEthTokens: fail(because error: Eth node SDK not initialized)
 
   //// Remember run function GetWalletAddrFromEthMnemonic (item test 5) to get wallet address
-  // walletaddr= JSON.parse(walletaddr);
-  // console.log('private key' , walletaddr.PrivateKey);
+  walletaddr= JSON.parse(walletaddr);
+  console.log('private key' , walletaddr.PrivateKey);
 
-  // let res8= await TransferEthTokens(walletaddr.PrivateKey,"1000","2");
-  // console.log('TransferEthTokens ', res8);
+  let res8= await TransferEthTokens(walletaddr.PrivateKey,"1000","2");
+  console.log('TransferEthTokens ', res8);
   
 
   ////===================================
@@ -493,6 +526,7 @@ async function testtinygo() {
 }
 
 // testtinygo();
+// init();
 testethwallet();
 
 </script>
